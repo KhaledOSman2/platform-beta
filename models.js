@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect("mongodb+srv://kh5355988924:xUc0qYvow1TcIhi8@cluster0.y3a3lqt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
     .then(() => {
         console.log('Connected to MongoDB Atlas');
     }).catch((err) => {

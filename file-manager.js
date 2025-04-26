@@ -6,9 +6,9 @@ require('dotenv').config();
 
 // إعداد Cloudinary
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    cloud_name: "dp6y9qk9ldp6y9qk9l",
+    api_key: "182218919357853",
+    api_secret: "fwwXyU2qE-ETEijjrB6fPD2yINw"
 });
 
 // إعداد التخزين عبر Cloudinary

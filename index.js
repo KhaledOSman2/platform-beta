@@ -16,8 +16,8 @@ const {
 } = require('./models');
 const fileManager = require('./file-manager');
 const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT;
+const PORT = 3000;
+const JWT_SECRET = "914a20dddcf9c8d07abf5a4fd19c9895761b2381ca439db756a4a1c479ad37c0";
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
