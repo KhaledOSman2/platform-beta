@@ -133,6 +133,12 @@ document.addEventListener('DOMContentLoaded', async function () {
                     ? `<span class="new-badge"><i class="fas fa-star me-1"></i> جديد</span>`
                     : '';
 
+                // شارة السعر
+                const priceBadge = `<span class="course-price-badge money-badge" style="display:inline-flex; align-items:center; gap:6px; margin-right:8px; padding:5px 16px; border-radius:22px; font-size:1.05rem; font-weight:700; background:${course.price === 0 ? '#d4edda' : '#fffbe6'}; color:${course.price === 0 ? '#28a745' : '#b8860b'}; border:1.5px solid ${course.price === 0 ? '#28a745' : '#b8860b'}; box-shadow:0 2px 8px rgba(0,0,0,0.09);">
+                            <i class="fas fa-money-bill-wave" style="color:${course.price === 0 ? '#28a745' : '#b8860b'};"></i>
+                            ${course.price === 0 ? 'مجاني' : course.price + ' جنيه'}
+                        </span>`;
+
                 // تنسيق تاريخ الكورس
                 let formattedDate = '';
                 if (course.addedDate) {
@@ -156,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         </div>
                         <div class="card-body p-4">
                             <span class="grade-badge"><i class="fas fa-graduation-cap"></i>${course.grade}</span>
-                           
+                           ${priceBadge}
                             <h5 class="card-title fw-bold mb-3">${course.title}</h5>
                             <div class="course-meta">
                                 <span class="lectures-count" style="box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 20px;">

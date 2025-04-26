@@ -733,6 +733,16 @@ document.addEventListener('DOMContentLoaded', function () {
         courseForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
+            // إظهار تأثير التحميل على الشاشة
+            document.getElementById('globalLoader').style.display = 'block';
+
+            const saveBtn = document.querySelector('#courseForm button[type="submit"]');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                const originalContent = saveBtn.innerHTML;
+                saveBtn.setAttribute('data-original-content', originalContent);
+            }
+
             const id = document.getElementById('courseId').value;
             const title = sanitizeInput(document.getElementById('courseTitle').value);
             const grade = sanitizeInput(document.getElementById('courseGrade').value);
@@ -826,8 +836,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (examsContainer) examsContainer.innerHTML = '';
                     const courseModal = bootstrap.Modal.getInstance(document.getElementById('courseModal'));
                     if (courseModal) courseModal.hide();
+                    // إخفاء تأثير التحميل عند نجاح التحديث
+                    if (res.message && res.message.includes('تم تحديث الكورس بنجاح')) {
+                        document.getElementById('globalLoader').style.display = 'none';
+                    }
+                    // إعادة تفعيل الزر فقط بدون سبينر
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = saveBtn.getAttribute('data-original-content') || 'حفظ';
+                    }
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('globalLoader').style.display = 'none';
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = saveBtn.getAttribute('data-original-content') || 'حفظ';
+                    }
+                });
         });
     }
 

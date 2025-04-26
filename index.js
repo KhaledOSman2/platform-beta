@@ -323,8 +323,8 @@ app.post('/api/courses', authenticateToken, fileManager.uploadCourseImage, async
             await fileManager.deleteCloudinaryFileByUrl(req.body.existingImageURL);
         }
         if (req.file) {
-            // رفع الصورة فعليًا إلى Cloudinary
-            const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'courses');
+            // رفع الصورة فعليًا إلى Cloudinary مع اسم الملف الأصلي
+            const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'courses', req.file.originalname);
             imageURL = result.secure_url;
         } else {
             imageURL = '';
@@ -417,7 +417,7 @@ app.put('/api/courses/:id', authenticateToken, fileManager.uploadCourseImage, as
                 await fileManager.deleteCloudinaryFileByUrl(course.imageURL);
             }
             try {
-                const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'courses');
+                const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'courses', req.file.originalname);
                 imageURL = result.secure_url;
             } catch (error) {
                 console.error('خطأ في رفع صورة الكورس إلى Cloudinary (تعديل):', error);
@@ -517,7 +517,7 @@ app.post('/api/uploadActivity', authenticateToken, fileManager.uploadActivityFil
         return res.status(400).json({ message: 'لم يتم تحميل الملف' });
     }
     try {
-        const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'activities');
+        const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'activities', req.file.originalname);
         res.json({ filePath: result.secure_url });
     } catch (error) {
         console.error('خطأ في رفع ملف النشاط إلى Cloudinary:', error);

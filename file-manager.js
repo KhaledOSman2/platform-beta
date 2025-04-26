@@ -81,11 +81,22 @@ async function deleteCloudinaryFileByUrl(fileUrl) {
 }
 
 // دوال للرفع والاستبدال
-async function uploadToCloudinary(buffer, mimetype, folder = 'the-platform') {
+async function uploadToCloudinary(buffer, mimetype, folder = 'the-platform', originalname = '') {
   const resource_type = getCloudinaryResourceType(mimetype);
+  // توليد رقم عشوائي كاسم للملف
+  const public_id = Date.now().toString() + '-' + Math.floor(Math.random() * 1000000).toString();
+  let format;
+  if (originalname) {
+    const lastDot = originalname.lastIndexOf('.');
+    if (lastDot !== -1) {
+      format = originalname.substring(lastDot + 1).toLowerCase();
+    }
+  }
   return new Promise((resolve, reject) => {
+    const options = { folder, resource_type, public_id };
+    if (format) options.format = format;
     const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type },
+      options,
       (error, result) => {
         if (error) return reject(error);
         resolve(result);
@@ -104,7 +115,7 @@ const uploadActivityFile = upload.single('activityFile');
 async function replaceCourseImage(oldUrl, file) {
   if (oldUrl) await deleteCloudinaryFileByUrl(oldUrl);
   if (!file) return '';
-  const result = await uploadToCloudinary(file.buffer, file.mimetype, 'courses');
+  const result = await uploadToCloudinary(file.buffer, file.mimetype, 'courses', file.originalname);
   return result.secure_url;
 }
 
@@ -112,7 +123,7 @@ async function replaceCourseImage(oldUrl, file) {
 async function replaceActivityFile(oldUrl, file) {
   if (oldUrl) await deleteCloudinaryFileByUrl(oldUrl);
   if (!file) return '';
-  const result = await uploadToCloudinary(file.buffer, file.mimetype, 'activities');
+  const result = await uploadToCloudinary(file.buffer, file.mimetype, 'activities', file.originalname);
   return result.secure_url;
 }
 
