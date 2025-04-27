@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             const gradeSelect = document.getElementById('grade');
             try {
                 const gradesResponse = await fetch('/api/grades');
+                if (!gradesResponse.ok) {
+                    const errorData = await gradesResponse.json();
+                    throw new Error(errorData.message || 'فشل في جلب الصفوف الدراسية');
+                }
                 const grades = await gradesResponse.json();
                 grades.forEach(grade => {
                     const option = document.createElement('option');
@@ -55,11 +59,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                 });
             } catch (err) {
                 console.error('Error fetching grades:', err);
+                NotificationManager.show('حدث خطأ أثناء جلب الصفوف الدراسية', 'error');
             }
         }
     }
 });
-
 
 AOS.init({
     duration: 1000
@@ -68,91 +72,110 @@ AOS.init({
 document.addEventListener('DOMContentLoaded', async function () {
     try {
         const response = await fetch('/api/all-courses');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'فشل في جلب الكورسات');
+        }
         const courses = await response.json();
         const latestCoursesGrid = document.getElementById('latestCoursesGrid');
 
-        courses.slice(-3).reverse().forEach(course => {
-            const courseCard = document.createElement('div');
-            courseCard.className = 'col-lg-4 col-md-6';
-            courseCard.innerHTML = `
-                <div class="course-card card rounded-4 overflow-hidden shadow">
-                    <div class="position-relative overflow-hidden">
-                        <img src="${course.imageURL || 'images/course-placeholder.jpg'}" 
-                             class="card-img-top" 
-                             alt="${course.title}">
-                        <span class="new-badge"><i class="fas fa-star me-1"></i> جديد</span>
-                    </div>
-                    <div class="card-body">
-                        <span class="grade-badge">${course.grade}</span>
-                        <span class="course-price-badge money-badge" style="display:inline-flex; align-items:center; gap:6px; margin-right:8px; padding:5px 16px; border-radius:22px; font-size:1.05rem; font-weight:700; background:${course.price === 0 ? '#d4edda' : '#fffbe6'}; color:${course.price === 0 ? '#28a745' : '#b8860b'}; border:1.5px solid ${course.price === 0 ? '#28a745' : '#b8860b'}; box-shadow:0 2px 8px rgba(0,0,0,0.09);">
-                            <i class="fas fa-money-bill-wave" style="color:${course.price === 0 ? '#28a745' : '#b8860b'};"></i>
-                            ${course.price === 0 ? 'مجاني' : course.price + ' جنيه'}
-                        </span>
-                        <h5 class="card-title fw-bold">${course.title}</h5>
-                        <div class="course-meta">
-                           <span class="lectures-count" style="box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 20px;">
+        if (courses.length === 0) {
+            NotificationManager.show('لا توجد كورسات متاحة حاليًا', 'info');
+        } else {
+            courses.slice(-3).reverse().forEach(course => {
+                const courseCard = document.createElement('div');
+                courseCard.className = 'col-lg-4 col-md-6';
+                courseCard.innerHTML = `
+                    <div class="course-card card rounded-4 overflow-hidden shadow">
+                        <div class="position-relative overflow-hidden">
+                            <img src="${course.imageURL || 'images/course-placeholder.jpg'}" 
+                                 class="card-img-top" 
+                                 alt="${course.title}">
+                            <span class="new-badge"><i class="fas fa-star me-1"></i> جديد</span>
+                        </div>
+                        <div class="card-body">
+                            <span class="grade-badge">${course.grade}</span>
+                            <span class="course-price-badge money-badge" style="display:inline-flex; align-items:center; gap:6px; margin-right:8px; padding:5px 16px; border-radius:22px; font-size:1.05rem; font-weight:700; background:${course.price === 0 ? '#d4edda' : '#fffbe6'}; color:${course.price === 0 ? '#28a745' : '#b8860b'}; border:1.5px solid ${course.price === 0 ? '#28a745' : '#b8860b'}; box-shadow:0 2px 8px rgba(0,0,0,0.09);">
+                                <i class="fas fa-money-bill-wave" style="color:${course.price === 0 ? '#28a745' : '#b8860b'};"></i>
+                                ${course.price === 0 ? 'مجاني' : course.price + ' جنيه'}
+                            </span>
+                            <h5 class="card-title fw-bold">${course.title}</h5>
+                            <div class="course-meta">
+                               <span class="lectures-count" style="box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 20px;">
                                     <i class="fas fa-play-circle me-2"></i>
                                     ${course.videosCount !== undefined ? course.videosCount : 0} محاضرات
                                 </span>
-                            <button class="watch-cta-button" 
-                                    onclick="window.location.href='course.html?id=${course.id}'">
-                                مشاهدة الكورس
-                            </button>
+                                <button class="watch-cta-button" 
+                                        onclick="window.location.href='course.html?id=${course.id}'">
+                                    مشاهدة الكورس
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            latestCoursesGrid.appendChild(courseCard);
-        });
+                `;
+                latestCoursesGrid.appendChild(courseCard);
+            });
+        }
     } catch (error) {
         console.error('حدث خطأ أثناء جلب الكورسات:', error);
+        NotificationManager.show('حدث خطأ أثناء جلب الكورسات', 'error');
     }
-
 });
 
 // يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
 document.addEventListener('DOMContentLoaded', function () {
-    // التحقق من حالة تسجيل الدخول
-    const isLoggedIn = !!localStorage.getItem('token');
-    const authBtns = document.getElementById('authBtns');
-    const userBtns = document.getElementById('userBtns');
+    try {
+        // التحقق من حالة تسجيل الدخول
+        const isLoggedIn = !!localStorage.getItem('token');
+        const authBtns = document.getElementById('authBtns');
+        const userBtns = document.getElementById('userBtns');
 
-    if (isLoggedIn) {
-        authBtns.classList.add('d-none');
-        userBtns.classList.remove('d-none');
-    } else {
-        authBtns.classList.remove('d-none');
-        userBtns.classList.add('d-none');
-    }
+        if (!authBtns || !userBtns) throw new Error('أزرار المصادقة أو المستخدم غير موجودة');
 
-    // معالجة سلوك شريط التنقل على الشاشات المختلفة
-    const navbarCollapse = document.getElementById('navbarNav');
-
-    function adjustNavbar() {
-        if (window.innerWidth < 992) {
-            // للشاشات الصغيرة - إزالة الظهور التلقائي وتغيير الأنماط
-            navbarCollapse.classList.remove('show');
+        if (isLoggedIn) {
+            authBtns.classList.add('d-none');
+            userBtns.classList.remove('d-none');
         } else {
-            // للشاشات الكبيرة - إضافة class للتأكد من العرض الصحيح
-            navbarCollapse.classList.add('desktop-nav');
+            authBtns.classList.remove('d-none');
+            userBtns.classList.add('d-none');
         }
+
+        // معالجة سلوك شريط التنقل على الشاشات المختلفة
+        const navbarCollapse = document.getElementById('navbarNav');
+        if (!navbarCollapse) throw new Error('عنصر شريط التنقل غير موجود');
+
+        function adjustNavbar() {
+            try {
+                if (window.innerWidth < 992) {
+                    navbarCollapse.classList.remove('show');
+                } else {
+                    navbarCollapse.classList.add('desktop-nav');
+                }
+            } catch (error) {
+                console.error('Error adjusting navbar:', error.message);
+            }
+        }
+
+        adjustNavbar();
+        window.addEventListener('resize', adjustNavbar);
+
+        // إصلاح زر تسجيل الخروج
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (!logoutBtn) throw new Error('زر تسجيل الخروج غير موجود');
+        logoutBtn.addEventListener('click', function () {
+            try {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html?logout=1';
+            } catch (error) {
+                console.error('Error logging out:', error.message);
+                NotificationManager.show('حدث خطأ أثناء تسجيل الخروج', 'error');
+            }
+        });
+    } catch (error) {
+        console.error('Error initializing authentication:', error.message);
+        NotificationManager.show('حدث خطأ أثناء تهيئة المصادقة', 'error');
     }
-
-    // تنفيذ عند تحميل الصفحة
-    adjustNavbar();
-
-    // تنفيذ عند تغيير حجم الشاشة
-    window.addEventListener('resize', adjustNavbar);
-
-    // إصلاح زر تسجيل الخروج
-    document.getElementById('logoutBtn').addEventListener('click', function () {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('user');
-        // إظهار رسالة تم تسجيل الخروج بنجاح
-        NotificationManager.show('تم تسجيل الخروج بنجاح', 'success');
-        // إعادة تحميل الصفحة أو الانتقال لصفحة تسجيل الدخول
-        window.location.href = 'login.html';
-    });
 });

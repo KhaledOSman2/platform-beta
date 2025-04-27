@@ -55,11 +55,11 @@ const errorHandler = (err, req, res, next) => {
     err.status = err.status || 'error';
 
     // تسجيل الخطأ
-    logError(err);
+    logError(err.message);
 
     // معالجة أخطاء MongoDB
     if (err.name === 'MongoServerError' || err.name === 'ValidationError' || err.name === 'MongoNetworkError') {
-        err = handleMongoErrors(err);
+        err = handleMongoErrors(err.message);
     }
 
     // في بيئة التطوير
@@ -81,7 +81,7 @@ const errorHandler = (err, req, res, next) => {
     }
 
     // الأخطاء البرمجية غير المتوقعة
-    console.error('ERROR 💥', err);
+    console.error('ERROR 💥', err.message);
     return res.status(500).json({
         status: 'error',
         message: 'حدث خطأ غير متوقع'

@@ -1,3 +1,11 @@
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
@@ -29,7 +37,7 @@ const handleMongoError = (err, req, res, next) => {
             });
         }
     }
-    next(err);
+    next(err.message);
 };
 
 // معالج الأخطاء العام
@@ -103,9 +111,19 @@ app.post('/api/register', async (req, res) => {
         return res.status(400).json({ message: 'البريد الإلكتروني مستخدم بالفعل' });
     }
 
-    const newUser = new User({ id: Date.now(), username, email, password, grade, isAdmin: false, isBanned: false });
-    await newUser.save();
-    res.status(201).json({ message: 'تم إنشاء الحساب بنجاح' });
+    try {
+        const newUser = new User({ id: Date.now(), username, email, password, grade, isAdmin: false, isBanned: false });
+        await newUser.save();
+        res.status(201).json({ message: 'تم إنشاء الحساب بنجاح' });
+    } catch (err) {
+        if (err.name === 'ValidationError') {
+            // جمع رسائل الأخطاء من Mongoose
+            const errors = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ message: errors.join('. ') });
+        }
+        // أخطاء أخرى
+        return res.status(500).json({ message: 'حدث خطأ أثناء إنشاء الحساب' });
+    }
 });
 
 // ----------------------
@@ -149,17 +167,32 @@ app.get('/api/only-user', authenticateToken, async (req, res) => {
 });
 
 app.delete('/api/users/:id', authenticateToken, async (req, res) => {
-    if (!req.user.isAdmin) return res.sendStatus(403);
+    try {
+        if (!req.user.isAdmin) return res.sendStatus(403);
 
-    const userId = parseInt(req.params.id);
+        const userId = parseInt(req.params.id);
 
-    // منع الأدمن من حذف حسابه الشخصي
-    if (req.user.id === userId) {
-        return res.status(403).json({ message: 'لا يمكن للمسؤول حذف حسابه الشخصي' });
+        // التحقق من صحة معرف المستخدم
+        if (isNaN(userId) || userId <= 0) {
+            return res.status(400).json({ message: 'معرف المستخدم غير صالح' });
+        }
+
+        // منع الأدمن من حذف حسابه الشخصي
+        if (req.user.id === userId) {
+            return res.status(403).json({ message: 'لا يمكن للمسؤول حذف حسابه الشخصي' });
+        }
+
+        const result = await User.deleteOne({ id: userId });
+        
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'المستخدم غير موجود' });
+        }
+        
+        res.json({ message: 'تم حذف المستخدم بنجاح' });
+    } catch (error) {
+        console.error('خطأ في حذف المستخدم:', error.message);
+        res.status(500).json({ message: 'حدث خطأ أثناء محاولة حذف المستخدم' });
     }
-
-    await User.deleteOne({ id: userId });
-    res.json({ message: 'تم حذف المستخدم' });
 });
 
 // تعديل بيانات المستخدم: بعد التحديث يتم إرسال علم لتسجيل الخروج مع رسالة معلومات الطلب
@@ -176,6 +209,27 @@ app.put('/api/users/:id', authenticateToken, async (req, res, next) => {
         }
 
         const { username, password, email, grade } = req.body;
+
+        // التحقق من صحة البيانات
+        if (!username || username.trim() === '') {
+            return res.status(400).json({ message: 'اسم المستخدم مطلوب' });
+        }
+
+        if (username.length > 16) {
+            return res.status(400).json({ message: 'اسم المستخدم يجب ألا يزيد عن 16 حرفًا' });
+        }
+
+        if (!password || password.trim() === '') {
+            return res.status(400).json({ message: 'كلمة المرور مطلوبة' });
+        }
+
+        // التحقق من تكرار البريد الإلكتروني
+        if (email && email !== user.email) {
+            const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+            if (existingUser && existingUser.id !== userId) {
+                return res.status(400).json({ message: 'البريد الإلكتروني مستخدم بالفعل' });
+            }
+        }
 
         if (req.user.isAdmin) {
             user.username = username;
@@ -195,6 +249,12 @@ app.put('/api/users/:id', authenticateToken, async (req, res, next) => {
             res.json({ message: 'تم تحديث البيانات بنجاح.' });
         }
     } catch (error) {
+        console.error('خطأ في تحديث بيانات المستخدم:', error.message);
+        if (error.name === 'ValidationError') {
+            // جمع رسائل الأخطاء من Mongoose
+            const errors = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({ message: errors.join('. ') });
+        }
         next(error);
     }
 });
@@ -376,7 +436,7 @@ app.post('/api/courses', authenticateToken, fileManager.uploadCourseImage, async
             imageURL = '';
         }
     } catch (error) {
-        console.error('خطأ في رفع صورة الكورس إلى Cloudinary:', error);
+        console.error('Error during upload course image to Cloudinary:', error.message);
         imageURL = '';
     }
 
@@ -437,12 +497,12 @@ app.put('/api/courses/:id', authenticateToken, fileManager.uploadCourseImage, as
             const matchingNewActivity = newActivities.find(newActivity => newActivity.id && newActivity.id === oldActivity.id);
             // إذا لم يعد النشاط موجودًا في القائمة الجديدة (تم حذفه من الواجهة)
             if (!matchingNewActivity && oldActivity.filePath) {
-                console.log(`حذف ملف نشاط محذوف: ${oldActivity.title} (${oldActivity.filePath})`);
+                console.log(`Delete a deleted activity file: ${oldActivity.title} (${oldActivity.filePath})`);
                 await fileManager.deleteCloudinaryFileByUrl(oldActivity.filePath);
             }
             // إذا كان النشاط موجودًا ولكن تم استبدال الملف فقط
             else if (matchingNewActivity && oldActivity.filePath && matchingNewActivity.filePath && matchingNewActivity.filePath !== oldActivity.filePath) {
-                console.log(`حذف ملف نشاط مستبدل: ${oldActivity.title} (${oldActivity.filePath})`);
+                console.log(`Delete a replaced activity file: ${oldActivity.title} (${oldActivity.filePath})`);
                 await fileManager.deleteCloudinaryFileByUrl(oldActivity.filePath);
             }
         }
@@ -466,14 +526,14 @@ app.put('/api/courses/:id', authenticateToken, fileManager.uploadCourseImage, as
                 const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'courses', req.file.originalname);
                 imageURL = result.secure_url;
             } catch (error) {
-                console.error('خطأ في رفع صورة الكورس إلى Cloudinary (تعديل):', error);
+                console.error('خطأ في رفع صورة الكورس إلى Cloudinary (تعديل):', error.message);
             }
         }
         // تحديث قائمة الأنشطة في قاعدة البيانات لتكون مطابقة تمامًا للقائمة الجديدة
         Object.assign(course, {
             title,
             grade,
-            price: parseFloat(price) || course.price || 0,
+            price: (price !== undefined && price !== null) ? parseFloat(price) || 0 : course.price,
             imageURL,
             videos,
             activities: newActivities,
@@ -487,7 +547,7 @@ app.put('/api/courses/:id', authenticateToken, fileManager.uploadCourseImage, as
         for (const oldActivity of oldActivities) {
             const stillExists = savedActivities.some(a => a.id === oldActivity.id);
             if (!stillExists && oldActivity.filePath) {
-                console.log(`[DoubleCheck] حذف فعلي لملف نشاط محذوف: ${oldActivity.title} (${oldActivity.filePath})`);
+                console.log(`[DoubleCheck] Effectively delete a deleted activity file: ${oldActivity.title} (${oldActivity.filePath})`);
                 await fileManager.deleteCloudinaryFileByUrl(oldActivity.filePath);
             }
         }
@@ -502,7 +562,7 @@ app.put('/api/courses/:id', authenticateToken, fileManager.uploadCourseImage, as
             }
         });
     } catch (error) {
-        console.error('خطأ في تحديث الكورس:', error);
+        console.error('خطأ في تحديث الكورس:', error.message);
         res.status(500).json({ 
             message: 'حدث خطأ أثناء تحديث الكورس',
             error: error.message 
@@ -549,7 +609,7 @@ app.delete('/api/courses/:id', authenticateToken, async (req, res) => {
             await Course.deleteOne({ id: courseId });
             res.json({ message: 'تم حذف الكورس وجميع الملفات المرتبطة به بنجاح' });
         } catch (error) {
-            console.error('خطأ في حذف الكورس أو ملفاته:', error);
+            console.error('خطأ في حذف الكورس أو ملفاته:', error.message);
             res.status(500).json({ message: 'حدث خطأ أثناء حذف الكورس أو ملفاته', error: error.message });
         }
     } else {
@@ -566,7 +626,7 @@ app.post('/api/uploadActivity', authenticateToken, fileManager.uploadActivityFil
         const result = await fileManager.uploadToCloudinary(req.file.buffer, req.file.mimetype, 'activities', req.file.originalname);
         res.json({ filePath: result.secure_url });
     } catch (error) {
-        console.error('خطأ في رفع ملف النشاط إلى Cloudinary:', error);
+        console.error('خطأ في رفع ملف النشاط إلى Cloudinary:', error.message);
         res.status(500).json({ message: 'فشل رفع الملف إلى Cloudinary', error: error.message });
     }
 });

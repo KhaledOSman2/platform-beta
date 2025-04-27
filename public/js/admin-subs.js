@@ -51,7 +51,7 @@ function loadAllCourses() {
         populateCoursesFilterDropdown();
     })
     .catch(error => {
-        console.error('Error loading all courses:', error);
+        console.error('Error loading all courses:', error.message);
     });
 }
 
@@ -538,17 +538,17 @@ function generateCodes() {
 
     // Validate inputs
     if (!count || count < 1 || count > 100) {
-        alert('يرجى إدخال عدد صحيح للأكواد بين 1 و 100.');
+        NotificationManager.show('يرجى إدخال عدد صحيح للأكواد بين 1 و 100.', 'error');
         return;
     }
 
     if (!gradeId) {
-        alert('يرجى اختيار الصف الدراسي.');
+        NotificationManager.show('يرجى اختيار الصف الدراسي.', 'error');
         return;
     }
     
     if (selectedCourses.length === 0) {
-        alert('يرجى اختيار كورس واحد على الأقل.');
+        NotificationManager.show('يرجى اختيار كورس واحد على الأقل.', 'error');
         return;
     }
 
@@ -576,14 +576,14 @@ function generateCodes() {
             loadStatistics();
 
     // Show success message
-            alert(`تم إنشاء ${count} كود بنجاح!`);
+            NotificationManager.show('تم إنشاء الأكواد بنجاح.', 'success');
         } else {
-            alert('حدث خطأ أثناء إنشاء الأكواد: ' + data.message);
+            NotificationManager.show('حدث خطأ أثناء إنشاء الأكواد: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error generating codes:', error);
-        alert('حدث خطأ أثناء إنشاء الأكواد.');
+        NotificationManager.show('حدث خطأ أثناء إنشاء الأكواد.', 'error');
     });
 }
 
@@ -664,7 +664,7 @@ function exportCodes(filter, isFiltered = false) {
     })
     .catch(error => {
         console.error('Error exporting codes:', error);
-        alert(error.message || 'حدث خطأ أثناء تصدير الأكواد.');
+        NotificationManager.show(error.message || 'حدث خطأ أثناء تصدير الأكواد.', 'error');
         
         // إعادة الزر إلى حالته الطبيعية
         resetExportButton(exportBtn, filter, isFiltered);
@@ -884,7 +884,7 @@ function viewCodeDetails(codeId) {
     })
     .catch(error => {
         console.error('Error getting code details:', error);
-        alert('حدث خطأ أثناء جلب تفاصيل الكود');
+        NotificationManager.show('حدث خطأ أثناء جلب تفاصيل الكود', 'error');
     });
 }
 
@@ -900,14 +900,14 @@ function disableCode(codeId) {
             // Reload codes
             loadCodes(codesPage);
             loadStatistics();
-    alert('تم تعطيل الكود بنجاح.');
+            NotificationManager.show('تم تعطيل الكود بنجاح.');
         } else {
-            alert('حدث خطأ أثناء تعطيل الكود: ' + data.message);
+            NotificationManager.show('حدث خطأ أثناء تعطيل الكود: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error disabling code:', error);
-        alert('حدث خطأ أثناء تعطيل الكود.');
+        NotificationManager.show('حدث خطأ أثناء تعطيل الكود.', 'error');
     });
 }
 
@@ -923,14 +923,14 @@ function enableCode(codeId) {
             // Reload codes
             loadCodes(codesPage);
             loadStatistics();
-            alert('تم إلغاء تعطيل الكود بنجاح.');
+            NotificationManager.show('تم إلغاء تعطيل الكود بنجاح.', 'success');
         } else {
-            alert('حدث خطأ أثناء إلغاء تعطيل الكود: ' + data.message);
+            NotificationManager.show('حدث خطأ أثناء إلغاء تعطيل الكود: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error enabling code:', error);
-        alert('حدث خطأ أثناء إلغاء تعطيل الكود.');
+        NotificationManager.show('حدث خطأ أثناء إلغاء تعطيل الكود.', 'error');
     });
 }
 
@@ -946,14 +946,14 @@ function deleteCode(codeId) {
             // Reload codes
             loadCodes(codesPage);
             loadStatistics();
-    alert('تم حذف الكود بنجاح.');
+            NotificationManager.show('تم حذف الكود بنجاح.', 'success');
         } else {
-            alert('حدث خطأ أثناء حذف الكود: ' + data.message);
+            NotificationManager.show('حدث خطأ أثناء حذف الكود: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error deleting code:', error);
-        alert('حدث خطأ أثناء حذف الكود.');
+        NotificationManager.show('حدث خطأ أثناء حذف الكود.', 'error');
     });
 }
 

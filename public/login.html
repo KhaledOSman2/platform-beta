@@ -255,6 +255,10 @@
             if (urlParams.get('logout') === '1') {
                 NotificationManager.show('تم تسجيل الخروج بنجاح', 'success');
             }
+            // عرض اشعار عند انتهاء صلاحية الجلسة
+            if (urlParams.get('logout') === '2') {
+                NotificationManager.show('انتهت صلاحية الجلسة يرجى تسجيل الدخول مرة أخرى', 'warning');
+            }
 
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {

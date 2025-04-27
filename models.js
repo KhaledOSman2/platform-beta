@@ -1,20 +1,42 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+const MONGOURL = 'mongodb+srv://kh5355988924:xUc0qYvow1TcIhi8@cluster0.y3a3lqt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'; // Fixed variable declaration
 // MongoDB connection
-mongoose.connect("mongodb+srv://kh5355988924:xUc0qYvow1TcIhi8@cluster0.y3a3lqt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+mongoose.connect(MONGOURL)
     .then(() => {
         console.log('Connected to MongoDB Atlas');
     }).catch((err) => {
-        console.error('MongoDB connection error:', err);
+        console.error('MongoDB connection error:', err.message);
     });
+
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err.message);
+    const { logError } = require('./middleware/error-handler');
+    logError(`[MongoDB Connection Error]: ${err.message}`);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.warn('MongoDB connection lost. Retrying...');
+    setTimeout(() => {
+        mongoose.connect(MONGOURL)
+            .then(() => console.log('Reconnected to MongoDB'))
+            .catch(err => console.error('Reconnection failed:', err.message));
+    }, 5000); // إعادة المحاولة بعد 5 ثوانٍ
+});
 
 // User Schema with Validation
 const userSchema = new mongoose.Schema({
     id: { 
         type: Number, 
         unique: true,
-        required: [true, 'يجب توفير معرف المستخدم']
+        required: [true, 'يجب توفير معرف المستخدم'],
+        validate: {
+            validator: function(value) {
+                return !isNaN(value) && value > 0;
+            },
+            message: 'يجب أن يكون معرف المستخدم رقمًا صحيحًا موجبًا'
+        }
     },
     username: {
         type: String,
@@ -192,13 +214,6 @@ const notificationSchema = new mongoose.Schema({
         required: [true, 'يجب تحديد الصف الدراسي']
     }
 });
-
-// تحديد الإندكسات للبحث السريع
-userSchema.index({ email: 1 });
-courseSchema.index({ grade: 1 });
-gradeSchema.index({ name: 1 });
-activationCodeSchema.index({ code: 1 });
-subscriptionSchema.index({ userId: 1, courseIds: 1 });
 
 // تصدير النماذج
 const User = mongoose.model('User', userSchema);

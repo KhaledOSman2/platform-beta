@@ -479,11 +479,8 @@
                 sessionStorage.removeItem('token');
                 sessionStorage.removeItem('user');
 
-                // إظهار رسالة تم تسجيل الخروج بنجاح
-                alert('تم تسجيل الخروج بنجاح');
-
                 // إعادة تحميل الصفحة أو الانتقال لصفحة تسجيل الدخول
-                window.location.href = 'login.html';
+                window.location.href = 'login.html?logout=1';
             });
         });
     </script>

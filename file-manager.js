@@ -10,6 +10,9 @@ cloudinary.config({
   api_secret: "fwwXyU2qE-ETEijjrB6fPD2yINw",
 });
 
+console.clear()
+console.log(`Connected to Cloudinary`);
+
 // إعداد multer لتخزين الملفات في الذاكرة
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -37,7 +40,7 @@ function extractCloudinaryPublicId(fileUrl) {
       return publicId;
     }
   } catch (e) {
-    console.error('[Cloudinary] extractPublicId error:', e);
+    console.error('[Cloudinary] extractPublicId error:', error.message);
   }
   return null;
 }
@@ -74,7 +77,7 @@ async function deleteCloudinaryFileByUrl(fileUrl) {
       console.log(`[Cloudinary Delete] Tried ${type}:`, result);
       if (result.result === 'ok') return;
     } catch (err) {
-      console.error(`[Cloudinary Delete] Error for ${type}:`, err);
+      console.error(`[Cloudinary Delete] Error for ${type}:`, err.message);
     }
   }
   console.warn('[Cloudinary Delete] File not found:', fileUrl);

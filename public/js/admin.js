@@ -51,345 +51,395 @@ document.addEventListener('DOMContentLoaded', function () {
         return temp.innerHTML.replace(/[<>&"']/g, '');
     }
 
-    function loadUsers(page = 1) {
-        fetch('/api/users', {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(response => response.json())
-            .then(users => {
-                window.allUsers = users;
-                const totalPages = Math.ceil(users.length / itemsPerPage);
-                document.getElementById('usersTotalPages').textContent = totalPages;
-                const start = (page - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                const paginatedUsers = users.slice(start, end);
+    async function loadUsers(page = 1) {
+        try {
+            const response = await fetch('/api/users', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'حدث خطأ أثناء جلب المستخدمين');
+            }
+            const users = await response.json();
+            window.allUsers = users;
+            const totalPages = Math.ceil(users.length / itemsPerPage);
+            document.getElementById('usersTotalPages').textContent = totalPages;
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedUsers = users.slice(start, end);
 
-                const tbody = document.querySelector('#usersTable tbody');
-                tbody.innerHTML = '';
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = '';
 
-                paginatedUsers.forEach(user => {
-                    const tr = document.createElement('tr');
-                    tr.classList.add('table-light');
+            paginatedUsers.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.classList.add('table-light');
 
-                    const td1 = document.createElement('td');
-                    td1.innerHTML = `
-                        <div class="user-info-container">
-                            <div class="username fw-bold">${sanitizeInput(user.username)}</div>
-                            <div class="user-badges">
-                                    ${user.isAdmin ? '<span class="badge bg-success">Admin</span>' : ''}
-                                    ${user.isBanned ? '<span class="badge bg-danger">محظور</span>' : ''}
-                            </div>
+                const td1 = document.createElement('td');
+                td1.innerHTML = `
+                    <div class="user-info-container">
+                        <div class="username fw-bold">${sanitizeInput(user.username)}</div>
+                        <div class="user-badges">
+                            ${user.isAdmin ? '<span class="badge bg-success">Admin</span>' : ''}
+                            ${user.isBanned ? '<span class="badge bg-danger">محظور</span>' : ''}
                         </div>
-                    `;
+                    </div>
+                `;
 
-                    const td2 = document.createElement('td');
-                    td2.textContent = sanitizeInput(user.email);
+                const td2 = document.createElement('td');
+                td2.textContent = sanitizeInput(user.email);
 
-                    const td3 = document.createElement('td');
-                    td3.textContent = sanitizeInput(user.grade || 'N/A');
+                const td3 = document.createElement('td');
+                td3.textContent = sanitizeInput(user.grade || 'N/A');
 
-                    // أزرار التعديل والحذف في خانة التعديل
-                    const td4 = document.createElement('td');
-                    td4.innerHTML = `
-                        <button class="btn btn-sm btn-warning" title="تعديل" onclick='editUser(${JSON.stringify({
-                        id: user.id,
-                        username: sanitizeInput(user.username),
-                        email: sanitizeInput(user.email),
-                        password: sanitizeInput(user.password),
-                        grade: sanitizeInput(user.grade),
-                        isAdmin: user.isAdmin,
-                        isBanned: user.isBanned
-                    })})'><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>
-                    `;
+                // أزرار التعديل والحذف في خانة التعديل
+                const td4 = document.createElement('td');
+                td4.innerHTML = `
+                    <button class="btn btn-sm btn-warning" title="تعديل" onclick='editUser(${JSON.stringify({
+                    id: user.id,
+                    username: sanitizeInput(user.username),
+                    email: sanitizeInput(user.email),
+                    password: sanitizeInput(user.password),
+                    grade: sanitizeInput(user.grade),
+                    isAdmin: user.isAdmin,
+                    isBanned: user.isBanned
+                })})'><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>
+                `;
 
-                    // أزرار الحظر والادمن في خانة الإجراءات
-                    const td5 = document.createElement('td');
-                    td5.innerHTML = `
-                        ${user.isBanned ?
-                            `<button class="btn btn-sm btn-outline-success" title="إلغاء الحظر" onclick="unbanUser(${user.id})"><i class="fas fa-unlock"></i></button>` :
-                            `<button class="btn btn-sm btn-outline-danger" title="حظر" onclick="banUser(${user.id})"><i class="fas fa-ban"></i></button>`}
-                        ${user.isAdmin ?
-                            `<button class="btn btn-sm btn-outline-secondary" title="إزالة صلاحية الادمن" onclick="removeAdmin(${user.id})"><i class="fas fa-user-minus"></i></button>` :
-                            `<button class="btn btn-sm btn-outline-primary" title="ترقية إلى ادمن" onclick="makeAdmin(${user.id})"><i class="fas fa-user-shield"></i></button>`}
-                    `;
+                // أزرار الحظر والادمن في خانة الإجراءات
+                const td5 = document.createElement('td');
+                td5.innerHTML = `
+                    ${user.isBanned ?
+                        `<button class="btn btn-sm btn-outline-success" title="إلغاء الحظر" onclick="unbanUser(${user.id})"><i class="fas fa-unlock"></i></button>` :
+                        `<button class="btn btn-sm btn-outline-danger" title="حظر" onclick="banUser(${user.id})"><i class="fas fa-ban"></i></button>`}
+                    ${user.isAdmin ?
+                        `<button class="btn btn-sm btn-outline-secondary" title="إزالة صلاحية الادمن" onclick="removeAdmin(${user.id})"><i class="fas fa-user-minus"></i></button>` :
+                        `<button class="btn btn-sm btn-outline-primary" title="ترقية إلى ادمن" onclick="makeAdmin(${user.id})"><i class="fas fa-user-shield"></i></button>`}
+                `;
 
-                    tr.appendChild(td1);
-                    tr.appendChild(td2);
-                    tr.appendChild(td3);
-                    tr.appendChild(td4);
-                    tr.appendChild(td5); // نضع خانة الإجراءات قبل خانة التعديل
-                    tbody.appendChild(tr);
+                tr.appendChild(td1);
+                tr.appendChild(td2);
+                tr.appendChild(td3);
+                tr.appendChild(td4);
+                tr.appendChild(td5);
+                tbody.appendChild(tr);
+            });
+
+            // تفعيل أزرار التنقل بين الصفحات
+            updateUsersPagination();
+        } catch (err) {
+            console.error('Error loading users:', err.message);
+            NotificationManager.show(err.message || 'حدث خطأ أثناء جلب المستخدمين', 'error');
+            window.allUsers = []; // تعيين قيمة افتراضية
+        }
+    }
+
+    async function loadCourses(page = 1) {
+        try {
+            const response = await fetch('/api/admin-courses', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'حدث خطأ أثناء جلب الكورسات');
+            }
+            const courses = await response.json();
+            if (!Array.isArray(courses)) {
+                throw new Error('البيانات المستلمة ليست قائمة كورسات');
+            }
+            window.allCourses = courses;
+
+            const totalPages = Math.ceil(courses.length / itemsPerPage);
+            document.getElementById('coursesTotalPages').textContent = totalPages;
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedCourses = courses.slice(start, end);
+
+            const tbody = document.querySelector('#coursesTable tbody');
+            tbody.innerHTML = '';
+
+            paginatedCourses.forEach(course => {
+                const tr = document.createElement('tr');
+                tr.classList.add('table-light');
+
+                // Image cell
+                const tdImage = document.createElement('td');
+                tdImage.className = 'course-image-cell';
+                tdImage.innerHTML = `
+                    <img src="${sanitizeInput(course.imageURL || '')}" class="course-image" alt="صورة الكورس" onclick="showCourseImage('${sanitizeInput(course.imageURL || '')}')">
+                `;
+
+                // Title cell
+                const tdTitle = document.createElement('td');
+                tdTitle.className = 'scrollable-content';
+                tdTitle.innerHTML = `<div class="fw-bold">${sanitizeInput(course.title || '')}</div>`;
+
+                // Grade cell
+                const tdGrade = document.createElement('td');
+                tdGrade.textContent = sanitizeInput(course.grade || '');
+
+                // Price cell
+                const tdPrice = document.createElement('td');
+                tdPrice.innerHTML = `<span class="badge bg-success">${course.price ? course.price + ' جنيه' : 'مجاني'}</span>`;
+
+                // Videos cell
+                const tdVideos = document.createElement('td');
+                tdVideos.innerHTML = `
+                        <span class="badge bg-primary rounded-pill">${course.videos ? course.videos.length : 0}</span>
+                `;
+
+                // Activities cell
+                const tdActivities = document.createElement('td');
+                tdActivities.innerHTML = `
+                        <span class="badge bg-info rounded-pill">${course.activities ? course.activities.length : 0}</span>
+                `;
+
+                // Exams cell
+                const tdExams = document.createElement('td');
+                tdExams.innerHTML = `
+                        <span class="badge bg-warning rounded-pill">${course.exams ? course.exams.length : 0}</span>
+                `;
+
+                // Actions cell
+                const tdActions = document.createElement('td');
+                tdActions.innerHTML = `
+                        <button class="btn btn-sm btn-warning" title="تعديل" onclick='editCourse(${JSON.stringify(course)})'><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteCourse(${course.id})"><i class="fas fa-trash"></i></button>
+                `;
+
+                tr.appendChild(tdImage);
+                tr.appendChild(tdTitle);
+                tr.appendChild(tdGrade);
+                tr.appendChild(tdPrice);
+                tr.appendChild(tdVideos);
+                tr.appendChild(tdActivities);
+                tr.appendChild(tdExams);
+                tr.appendChild(tdActions);
+                tbody.appendChild(tr);
+            });
+
+            // تفعيل أزرار التنقل بين الصفحات
+            updateCoursesPagination();
+        } catch (err) {
+            console.error('Error loading courses:', err.message);
+            NotificationManager.show(err.message || 'حدث خطأ أثناء جلب الكورسات', 'error');
+            window.allCourses = []; // تعيين قيمة افتراضية
+        }
+    }
+
+    async function loadAnalytics() {
+        try {
+            const response = await fetch('/api/analytics', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'حدث خطأ أثناء جلب التحليلات');
+            }
+            const data = await response.json();
+            if (!data || typeof data !== 'object') {
+                throw new Error('البيانات المستلمة غير صالحة');
+            }
+            const videosCount = parseInt(data.totalVideos, 10);
+            document.getElementById('totalVideos').textContent = videosCount || 0;
+            document.getElementById('totalUsers').textContent = data.totalUsers || 0;
+            document.getElementById('totalCourses').textContent = data.totalCourses || 0;
+            document.getElementById('totalExams').textContent = data.totalExams || 0;
+        } catch (err) {
+            console.error('Error loading analytics:', err.message);
+            NotificationManager.show(err.message || 'حدث خطأ أثناء جلب التحليلات', 'error');
+        }
+    }
+
+    async function loadGrades(page = 1) {
+        try {
+            const response = await fetch('/api/grades', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'حدث خطأ أثناء جلب الصفوف الدراسية');
+            }
+            const grades = await response.json();
+            if (!Array.isArray(grades)) {
+                throw new Error('البيانات المستلمة ليست قائمة صفوف دراسية');
+            }
+            const totalPages = Math.ceil(grades.length / itemsPerPage);
+            document.getElementById('gradesTotalPages').textContent = totalPages;
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedGrades = grades.slice(start, end);
+
+            const gradeSelect = document.getElementById('courseGrade');
+            if (gradeSelect) {
+                gradeSelect.innerHTML = '';
+                grades.forEach(grade => {
+                    const option = document.createElement('option');
+                    option.value = sanitizeInput(grade.name || '');
+                    option.textContent = sanitizeInput(grade.name || '');
+                    gradeSelect.appendChild(option);
                 });
+            }
 
-                // تفعيل أزرار التنقل بين الصفحات
-                updateUsersPagination();
-            })
-            .catch(err => console.error(err));
-    }
-
-    function loadCourses(page = 1) {
-        fetch('/api/admin-courses', {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(response => response.json())
-            .then(courses => {
-                if (!Array.isArray(courses)) return;
-                window.allCourses = courses;
-
-                const totalPages = Math.ceil(courses.length / itemsPerPage);
-                document.getElementById('coursesTotalPages').textContent = totalPages;
-                const start = (page - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                const paginatedCourses = courses.slice(start, end);
-
-                const tbody = document.querySelector('#coursesTable tbody');
-                tbody.innerHTML = '';
-
-                paginatedCourses.forEach(course => {
-                    const tr = document.createElement('tr');
-                    tr.classList.add('table-light');
-
-                    // Image cell
-                    const tdImage = document.createElement('td');
-                    tdImage.className = 'course-image-cell';
-                    tdImage.innerHTML = `
-                        <img src="${sanitizeInput(course.imageURL || '')}" class="course-image" alt="صورة الكورس" onclick="showCourseImage('${sanitizeInput(course.imageURL || '')}')">
-                    `;
-
-                    // Title cell
-                    const tdTitle = document.createElement('td');
-                    tdTitle.className = 'scrollable-content';
-                    tdTitle.innerHTML = `<div class="fw-bold">${sanitizeInput(course.title || '')}</div>`;
-
-                    // Grade cell
-                    const tdGrade = document.createElement('td');
-                    tdGrade.textContent = sanitizeInput(course.grade || '');
-
-                    // Price cell
-                    const tdPrice = document.createElement('td');
-                    tdPrice.innerHTML = `<span class="badge bg-success">${course.price ? course.price + ' جنيه' : 'مجاني'}</span>`;
-
-                    // Videos cell
-                    const tdVideos = document.createElement('td');
-                    tdVideos.innerHTML = `
-                            <span class="badge bg-primary rounded-pill">${course.videos ? course.videos.length : 0}</span>
-                    `;
-
-                    // Activities cell
-                    const tdActivities = document.createElement('td');
-                    tdActivities.innerHTML = `
-                            <span class="badge bg-info rounded-pill">${course.activities ? course.activities.length : 0}</span>
-                    `;
-
-                    // Exams cell
-                    const tdExams = document.createElement('td');
-                    tdExams.innerHTML = `
-                            <span class="badge bg-warning rounded-pill">${course.exams ? course.exams.length : 0}</span>
-                    `;
-
-                    // Actions cell - تعديل طريقة عرض الأزرار لتكون مناسبة للجوال
-                    const tdActions = document.createElement('td');
-                    tdActions.innerHTML = `
-                            <button class="btn btn-sm btn-warning" title="تعديل" onclick='editCourse(${JSON.stringify(course)})'><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteCourse(${course.id})"><i class="fas fa-trash"></i></button>
-                    `;
-
-                    tr.appendChild(tdImage);
-                    tr.appendChild(tdTitle);
-                    tr.appendChild(tdGrade);
-                    tr.appendChild(tdPrice);
-                    tr.appendChild(tdVideos);
-                    tr.appendChild(tdActivities);
-                    tr.appendChild(tdExams);
-                    tr.appendChild(tdActions);
-                    tbody.appendChild(tr);
+            // تعبئة قائمة الصفوف الدراسية في نموذج إضافة طالب جديد
+            const newGradeSelect = document.getElementById('newGrade');
+            if (newGradeSelect) {
+                newGradeSelect.innerHTML = '';
+                grades.forEach(grade => {
+                    const option = document.createElement('option');
+                    option.value = sanitizeInput(grade.name || '');
+                    option.textContent = sanitizeInput(grade.name || '');
+                    newGradeSelect.appendChild(option);
                 });
+            }
 
-                // تفعيل أزرار التنقل بين الصفحات
-                updateCoursesPagination();
-            })
-            .catch(err => console.error(err));
-    }
+            const gradesTableBody = document.querySelector('#gradesTable tbody');
+            if (gradesTableBody) {
+                gradesTableBody.innerHTML = '';
+                paginatedGrades.forEach(grade => {
+                    const studentsCount = Array.isArray(window.allUsers) ? window.allUsers.filter(user => user.grade === grade.name).length : 0;
+                    const coursesCount = Array.isArray(window.allCourses) ? window.allCourses.filter(course => course.grade === grade.name).length : 0;
+                    const examsCount = Array.isArray(window.allCourses) ? window.allCourses.reduce((count, course) => {
+                        return course.grade === grade.name ? count + (course.exams ? course.exams.length : 0) : count;
+                    }, 0) : 0;
+                    const activitiesCount = Array.isArray(window.allCourses) ? window.allCourses.reduce((count, course) => {
+                        return course.grade === grade.name ? count + (course.activities ? course.activities.length : 0) : count;
+                    }, 0) : 0;
+                    const gradevideoCount = Array.isArray(window.allCourses) ? window.allCourses.reduce((count, course) => {
+                        return course.grade === grade.name ? count + (course.videos ? course.videos.length : 0) : count;
+                    }, 0) : 0;
 
-    function loadAnalytics() {
-        fetch('/api/analytics', {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (!data || typeof data !== 'object') return;
-                const videosCount = parseInt(data.totalVideos, 10);
-                document.getElementById('totalVideos').textContent = videosCount || 0;
-                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
-                document.getElementById('totalCourses').textContent = data.totalCourses || 0;
-                document.getElementById('totalExams').textContent = data.totalExams || 0;
-            })
-            .catch(err => console.error(err));
-    }
-
-    function loadGrades(page = 1) {
-        fetch('/api/grades', {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(response => response.json())
-            .then(grades => {
-                if (!Array.isArray(grades)) return;
-                const totalPages = Math.ceil(grades.length / itemsPerPage);
-                document.getElementById('gradesTotalPages').textContent = totalPages;
-                const start = (page - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                const paginatedGrades = grades.slice(start, end);
-
-                const gradeSelect = document.getElementById('courseGrade');
-                if (gradeSelect) {
-                    gradeSelect.innerHTML = '';
-                    grades.forEach(grade => {
-                        const option = document.createElement('option');
-                        option.value = sanitizeInput(grade.name || '');
-                        option.textContent = sanitizeInput(grade.name || '');
-                        gradeSelect.appendChild(option);
-                    });
-                }
-
-                // تعبئة قائمة الصفوف الدراسية في نموذج إضافة طالب جديد
-                const newGradeSelect = document.getElementById('newGrade');
-                if (newGradeSelect) {
-                    newGradeSelect.innerHTML = '';
-                    grades.forEach(grade => {
-                        const option = document.createElement('option');
-                        option.value = sanitizeInput(grade.name || '');
-                        option.textContent = sanitizeInput(grade.name || '');
-                        newGradeSelect.appendChild(option);
-                    });
-                }
-
-                const gradesTableBody = document.querySelector('#gradesTable tbody');
-                if (gradesTableBody) {
-                    gradesTableBody.innerHTML = '';
-                    paginatedGrades.forEach(grade => {
-                        const studentsCount = window.allUsers.filter(user => user.grade === grade.name).length;
-                        const coursesCount = window.allCourses.filter(course => course.grade === grade.name).length;
-                        const examsCount = window.allCourses.reduce((count, course) => {
-                            return course.grade === grade.name ? count + (course.exams ? course.exams.length : 0) : count;
-                        }, 0);
-                        const activitiesCount = window.allCourses.reduce((count, course) => {
-                            return course.grade === grade.name ? count + (course.activities ? course.activities.length : 0) : count;
-                        }, 0);
-                        const gradevideoCount = window.allCourses.reduce((count, course) => {
-                            return course.grade === grade.name ? count + (course.videos ? course.videos.length : 0) : count;
-                        }, 0);
-
-                        const tr = document.createElement('tr');
-                        tr.classList.add('table-light');
-
-                        const td1 = document.createElement('td');
-                        td1.innerHTML = `<span class="fw-bold">${sanitizeInput(grade.name || '')}</span>`;
-
-                        const td2 = document.createElement('td');
-                        td2.innerHTML = `<span class="badge bg-primary rounded-pill">${studentsCount}</span>`;
-
-                        const td3 = document.createElement('td');
-                        td3.innerHTML = `<span class="badge bg-success rounded-pill">${coursesCount}</span>`;
-
-                        const td4 = document.createElement('td');
-                        td4.innerHTML = `<span class="badge bg-info rounded-pill">${gradevideoCount}</span>`;
-
-                        const td5 = document.createElement('td');
-                        td5.innerHTML = `<span class="badge bg-warning rounded-pill">${activitiesCount}</span>`;
-
-                        const td6 = document.createElement('td');
-                        td6.innerHTML = `<span class="badge bg-danger rounded-pill">${examsCount}</span>`;
-
-                        const td7 = document.createElement('td');
-                        td7.innerHTML = `
-                            <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteGrade(${grade.id})"><i class="fas fa-trash"></i></button>
-                        `;
-
-                        tr.appendChild(td1);
-                        tr.appendChild(td2);
-                        tr.appendChild(td3);
-                        tr.appendChild(td4);
-                        tr.appendChild(td5);
-                        tr.appendChild(td6);
-                        tr.appendChild(td7);
-                        gradesTableBody.appendChild(tr);
-                    });
-                }
-
-                // تفعيل أزرار التنقل بين الصفحات
-                updateGradesPagination();
-            })
-            .catch(err => console.error(err));
-    }
-
-    function loadNotifications(page = 1) {
-        fetch('/api/notifications', {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(response => response.json())
-            .then(notifications => {
-                if (!Array.isArray(notifications)) return;
-                const totalPages = Math.ceil(notifications.length / itemsPerPage);
-                document.getElementById('notificationsTotalPages').textContent = totalPages;
-                const start = (page - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                const paginatedNotifications = notifications.slice(start, end);
-
-                const tbody = document.querySelector('#notificationsTable tbody');
-                tbody.innerHTML = '';
-
-                paginatedNotifications.forEach(notification => {
                     const tr = document.createElement('tr');
                     tr.classList.add('table-light');
 
                     const td1 = document.createElement('td');
-                    td1.innerHTML = `<span class="fw-bold">${sanitizeInput(notification.title || '')}</span>`;
+                    td1.innerHTML = `<span class="fw-bold">${sanitizeInput(grade.name || '')}</span>`;
 
                     const td2 = document.createElement('td');
-                    td2.className = 'notification-content';
-                    td2.textContent = sanitizeInput(notification.content || '');
+                    td2.innerHTML = `<span class="badge bg-primary rounded-pill">${studentsCount}</span>`;
 
                     const td3 = document.createElement('td');
-                    // إظهار "عام" إذا كان الإشعار عامًا أو لم يتم تحديد صف
-                    td3.textContent = sanitizeInput(notification.grade || 'عام');
-                    // إضافة فئة خاصة للإشعارات العامة
-                    if (notification.grade === 'عام' || !notification.grade) {
-                        td3.innerHTML = `<span class="badge bg-primary">${sanitizeInput(notification.grade || 'عام')}</span>`;
-                    } else {
-                        td3.innerHTML = `<span class="badge bg-info">${sanitizeInput(notification.grade)}</span>`;
-                    }
+                    td3.innerHTML = `<span class="badge bg-success rounded-pill">${coursesCount}</span>`;
 
                     const td4 = document.createElement('td');
-                    td4.innerHTML = `
-                        <button class="btn btn-sm btn-warning" title="تعديل" onclick='editNotification(${JSON.stringify(notification)})'><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteNotification(${notification.id})"><i class="fas fa-trash"></i></button>
+                    td4.innerHTML = `<span class="badge bg-info rounded-pill">${gradevideoCount}</span>`;
+
+                    const td5 = document.createElement('td');
+                    td5.innerHTML = `<span class="badge bg-warning rounded-pill">${activitiesCount}</span>`;
+
+                    const td6 = document.createElement('td');
+                    td6.innerHTML = `<span class="badge bg-danger rounded-pill">${examsCount}</span>`;
+
+                    const td7 = document.createElement('td');
+                    td7.innerHTML = `
+                        <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteGrade(${grade.id})"><i class="fas fa-trash"></i></button>
                     `;
 
                     tr.appendChild(td1);
                     tr.appendChild(td2);
                     tr.appendChild(td3);
                     tr.appendChild(td4);
-                    tbody.appendChild(tr);
+                    tr.appendChild(td5);
+                    tr.appendChild(td6);
+                    tr.appendChild(td7);
+                    gradesTableBody.appendChild(tr);
                 });
+            }
 
-                // تفعيل أزرار التنقل بين الصفحات
-                updateNotificationsPagination();
-            })
-            .catch(err => console.error(err));
+            // تفعيل أزرار التنقل بين الصفحات
+            updateGradesPagination();
+        } catch (err) {
+            console.error('Error loading grades:', err.message);
+            NotificationManager.show(err.message || 'حدث خطأ أثناء جلب الصفوف الدراسية', 'error');
+        }
     }
 
-    // Load all data on page load
-    loadUsers();
-    loadCourses();
-    loadAnalytics();
-    loadGrades();
-    loadNotifications();
+    async function loadNotifications(page = 1) {
+        try {
+            const response = await fetch('/api/notifications', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'حدث خطأ أثناء جلب الإشعارات');
+            }
+            const notifications = await response.json();
+            if (!Array.isArray(notifications)) {
+                throw new Error('البيانات المستلمة ليست قائمة إشعارات');
+            }
+            const totalPages = Math.ceil(notifications.length / itemsPerPage);
+            document.getElementById('notificationsTotalPages').textContent = totalPages;
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedNotifications = notifications.slice(start, end);
+
+            const tbody = document.querySelector('#notificationsTable tbody');
+            tbody.innerHTML = '';
+
+            paginatedNotifications.forEach(notification => {
+                const tr = document.createElement('tr');
+                tr.classList.add('table-light');
+
+                const td1 = document.createElement('td');
+                td1.innerHTML = `<span class="fw-bold">${sanitizeInput(notification.title || '')}</span>`;
+
+                const td2 = document.createElement('td');
+                td2.className = 'notification-content';
+                td2.textContent = sanitizeInput(notification.content || '');
+
+                const td3 = document.createElement('td');
+                // إظهار "عام" إذا كان الإشعار عامًا أو لم يتم تحديد صف
+                td3.textContent = sanitizeInput(notification.grade || 'عام');
+                // إضافة فئة خاصة للإشعارات العامة
+                if (notification.grade === 'عام' || !notification.grade) {
+                    td3.innerHTML = `<span class="badge bg-primary">${sanitizeInput(notification.grade || 'عام')}</span>`;
+                } else {
+                    td3.innerHTML = `<span class="badge bg-info">${sanitizeInput(notification.grade)}</span>`;
+                }
+
+                const td4 = document.createElement('td');
+                td4.innerHTML = `
+                    <button class="btn btn-sm btn-warning" title="تعديل" onclick='editNotification(${JSON.stringify(notification)})'><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" title="حذف" onclick="deleteNotification(${notification.id})"><i class="fas fa-trash"></i></button>
+                `;
+
+                tr.appendChild(td1);
+                tr.appendChild(td2);
+                tr.appendChild(td3);
+                tr.appendChild(td4);
+                tbody.appendChild(tr);
+            });
+
+            // تفعيل أزرار التنقل بين الصفحات
+            updateNotificationsPagination();
+        } catch (err) {
+            console.error('Error loading notifications:', err.message);
+            NotificationManager.show(err.message || 'حدث خطأ أثناء جلب الإشعارات', 'error');
+        }
+    }
+
+    // تحميل البيانات بتسلسل لضمان توفر window.allUsers و window.allCourses
+    async function loadAllData() {
+        try {
+            await loadUsers();
+            await loadCourses();
+            await loadAnalytics();
+            await loadGrades();
+            await loadNotifications();
+        } catch (err) {
+            console.error('Error loading all data:', err.message);
+            NotificationManager.show('حدث خطأ أثناء تحميل البيانات', 'error');
+        }
+    }
+
+    // استدعاء تحميل البيانات عند تحميل الصفحة
+    loadAllData();
 
     // إضافة وظيفة مستمع الأحداث مرة واحدة عند تحميل الصفحة
     function setupPageListeners() {
@@ -521,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     gradesPage = pageNum;
                     document.getElementById('gradesPageNumber').value = gradesPage;
                     updateGradesPagination();
-                    loadGrades(gradesPage);
+                    loadGrades(pageNum);
                 }
             });
         });
@@ -536,14 +586,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     notificationsPage = pageNum;
                     document.getElementById('notificationsPageNumber').value = notificationsPage;
                     updateNotificationsPagination();
-                    loadNotifications(notificationsPage);
+                    loadNotifications(pageNum);
                 }
             });
         });
 
         // تحميل الصفوف الدراسية في نموذج الإشعارات
         fetch('/api/grades')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'حدث خطأ أثناء جلب الصفوف الدراسية');
+                    });
+                }
+                return response.json();
+            })
             .then(grades => {
                 const gradeSelect = document.getElementById('notificationGrade');
                 // الحفاظ على خيار "إشعار عام"
@@ -557,8 +614,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     option.textContent = grade.name;
                     gradeSelect.appendChild(option);
                 });
+                NotificationManager.show('تم جلب البيانات بنجاح', 'success');
             })
-            .catch(err => console.error('Error loading grades for notifications:', err));
+            .catch(err => {
+                console.error('Error loading grades for notifications:', err.message);
+                NotificationManager.show(err.message || 'حدث خطأ أثناء جلب الصفوف الدراسية', 'error');
+            });
     }
 
     // تحديث مرة واحدة فقط بعد تحميل الصفحة
@@ -701,7 +762,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ name })
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء إضافة الصف الدراسي');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadGrades();
@@ -709,7 +777,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const gradeModal = bootstrap.Modal.getInstance(document.getElementById('gradeModal'));
                     if (gradeModal) gradeModal.hide();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error adding grade:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء إضافة الصف الدراسي', 'error');
+                });
         });
     }
 
@@ -719,12 +790,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء حذف الصف الدراسي');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadGrades();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error deleting grade:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء حذف الصف الدراسي', 'error');
+                });
         }
     };
 
@@ -746,7 +827,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const id = document.getElementById('courseId').value;
             const title = sanitizeInput(document.getElementById('courseTitle').value);
             const grade = sanitizeInput(document.getElementById('courseGrade').value);
-            const price = sanitizeInput(document.getElementById('coursePrice').value);
+            const priceInput = document.getElementById('coursePrice');
+            const priceValue = priceInput.value.trim();
+            const price = priceValue === '' ? 0 : Number(priceValue); // إذا كانت القيمة فارغة، اجعل السعر 0
+            console.log('Price before sending:', price, 'Type:', typeof price); // تسجيل السعر
+
             const courseImageInput = document.getElementById('courseImage');
             const courseImage = courseImageInput ? courseImageInput.files[0] : null;
 
@@ -761,10 +846,8 @@ document.addEventListener('DOMContentLoaded', function () {
             for (const input of document.querySelectorAll('.activity-input')) {
                 const activityTitle = sanitizeInput(input.querySelector('.activity-title').value);
                 const activityFile = input.querySelector('.activity-file').files[0];
-                // استخدم id ثابت إذا كان موجودًا، أو أنشئ id جديد فقط للنشاط الجديد
                 let activityId = input.querySelector('.activity-id') ? sanitizeInput(input.querySelector('.activity-id').value) : '';
                 if (!activityId) {
-                    // إذا لم يوجد id (نشاط جديد)، أنشئ id فريد
                     activityId = 'activity-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
                 }
                 if (activityFile) {
@@ -775,6 +858,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         headers: { Authorization: `Bearer ${token}` },
                         body: formDataActivity
                     });
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.message || 'حدث خطأ أثناء رفع المستند');
+                    }
                     const data = await response.json();
                     activities.push({ id: activityId, title: activityTitle, filePath: data.filePath, addedDate: new Date().toISOString() });
                 } else {
@@ -804,7 +891,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const formData = new FormData();
             formData.append('title', title);
             formData.append('grade', grade);
-            formData.append('price', price);
+            formData.append('price', price.toString());
             if (courseImage) {
                 formData.append('courseImage', courseImage);
             } else if (id) {
@@ -819,11 +906,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
             fetch(urlEndpoint, {
                 method,
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache' },
                 body: formData
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء حفظ الكورس');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
+                    console.log('Server response:', res); // تسجيل استجابة الخادم
                     NotificationManager.show(res.message, 'success');
                     loadCourses();
                     courseForm.reset();
@@ -836,23 +931,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (examsContainer) examsContainer.innerHTML = '';
                     const courseModal = bootstrap.Modal.getInstance(document.getElementById('courseModal'));
                     if (courseModal) courseModal.hide();
-                    // إخفاء تأثير التحميل عند نجاح التحديث
-                    if (res.message && res.message.includes('تم تحديث الكورس بنجاح')) {
-                        document.getElementById('globalLoader').style.display = 'none';
-                    }
-                    // إعادة تفعيل الزر فقط بدون سبينر
+                    document.getElementById('globalLoader').style.display = 'none';
                     if (saveBtn) {
                         saveBtn.disabled = false;
                         saveBtn.innerHTML = saveBtn.getAttribute('data-original-content') || 'حفظ';
                     }
                 })
                 .catch(err => {
-                    console.error(err);
+                    console.error('Error saving course:', err.message);
                     document.getElementById('globalLoader').style.display = 'none';
                     if (saveBtn) {
                         saveBtn.disabled = false;
                         saveBtn.innerHTML = saveBtn.getAttribute('data-original-content') || 'حفظ';
                     }
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء حفظ الكورس', 'error');
                 });
         });
     }
@@ -877,20 +969,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     window.deleteCourseVideo = function (btn, videoId) {
-        if (videoId && confirm('هل أنت متأكد من حذف الفيديو؟')) {
-            fetch(`/api/videos/${videoId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-            })
-                .then(response => response.json())
-                .then(res => {
-                    NotificationManager.show(res.message, 'success');
-                    btn.parentElement.remove();
-                    loadCourses();
-                })
-                .catch(err => console.error(err));
-        } else if (confirm('هل أنت متأكد من حذف الفيديو؟')) {
+        if (confirm('هل أنت متأكد من حذف الفيديو؟')) {
             btn.parentElement.remove();
+            NotificationManager.show('تم حذف الفيديو بنجاح', 'success');
         }
     };
 
@@ -914,20 +995,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     window.deleteCourseActivity = function (btn, activityId) {
-        if (activityId && confirm('هل أنت متأكد من حذف المستند؟')) {
-            fetch(`/api/activities/${activityId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-            })
-                .then(response => response.json())
-                .then(res => {
-                    NotificationManager.show(res.message, 'success');
-                    btn.parentElement.remove();
-                    loadCourses();
-                })
-                .catch(err => console.error(err));
-        } else if (confirm('هل أنت متأكد من حذف المستند؟')) {
+        if (confirm('هل أنت متأكد من حذف المستند؟')) {
             btn.parentElement.remove();
+            NotificationManager.show('تم حذف المستند بنجاح', 'success');
         }
     };
 
@@ -952,12 +1022,48 @@ document.addEventListener('DOMContentLoaded', function () {
             deleteButton.addEventListener('click', function () {
                 if (confirm('هل أنت متأكد من حذف الاختبار؟')) {
                     examInput.remove();
+                    NotificationManager.show('تم حذف الاختبار بنجاح', 'success');
                 }
             });
 
             examsContainer.appendChild(examInput);
         });
     }
+
+    window.deleteCourseExam = function (btn, examId) {
+        if (confirm('هل أنت متأكد من حذف الاختبار؟')) {
+            const parentElement = btn.closest('.exam-input');
+            if (!parentElement) {
+                NotificationManager.show('حدث خطأ أثناء محاولة حذف الاختبار', 'error');
+                return;
+            }
+            if (examId) {
+                fetch(`/api/exams/${examId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.message || 'حدث خطأ أثناء محاولة حذف الاختبار');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(res => {
+                        NotificationManager.show(res.message, 'success');
+                        parentElement.remove();
+                    })
+                    .catch(err => {
+                        console.error('Error deleting exam:', err.message);
+                        NotificationManager.show(err.message || 'حدث خطأ أثناء محاولة حذف الاختبار', 'error');
+                    });
+            } else {
+                parentElement.remove();
+                NotificationManager.show('تم حذف الاختبار بنجاح', 'success');
+            }
+        }
+    };
 
     const userForm = document.getElementById('userForm');
     if (userForm) {
@@ -976,7 +1082,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(payload)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء تحديث بيانات المستخدم');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadUsers();
@@ -984,7 +1097,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const userModal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
                     if (userModal) userModal.hide();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error updating user:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء تحديث بيانات المستخدم', 'error');
+                });
         });
     }
 
@@ -994,12 +1110,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء حذف المستخدم');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
-                    location.reload();
+                    loadUsers();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error deleting user:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء حذف المستخدم', 'error');
+                });
         }
     };
 
@@ -1013,7 +1139,14 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` }
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'حدث خطأ أثناء جلب الصفوف الدراسية');
+                    });
+                }
+                return response.json();
+            })
             .then(grades => {
                 const gradeSelect = document.getElementById('editGrade');
                 gradeSelect.innerHTML = '';
@@ -1026,11 +1159,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     gradeSelect.appendChild(option);
                 });
+                const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+                userModal.show();
+                NotificationManager.show('تم تحميل بيانات المستخدم بنجاح', 'success');
             })
-            .catch(err => console.error('Error loading grades:', err));
-
-        const userModal = new bootstrap.Modal(document.getElementById('userModal'));
-        userModal.show();
+            .catch(err => {
+                console.error('Error loading grades:', err.message);
+                NotificationManager.show(err.message || 'حدث خطأ أثناء جلب الصفوف الدراسية', 'error');
+            });
     };
 
     window.banUser = function (userId) {
@@ -1039,12 +1175,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء حظر المستخدم');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error banning user:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء حظر المستخدم', 'error');
+                });
         }
     };
 
@@ -1054,12 +1200,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء إلغاء حظر المستخدم');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error unbanning user:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء إلغاء حظر المستخدم', 'error');
+                });
         }
     };
 
@@ -1069,12 +1225,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء حذف الكورس');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
-                    location.reload();
+                    loadCourses();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error deleting course:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء حذف الكورس', 'error');
+                });
         }
     };
 
@@ -1147,18 +1313,25 @@ document.addEventListener('DOMContentLoaded', function () {
                             method: 'DELETE',
                             headers: { Authorization: `Bearer ${token}` }
                         })
-                            .then(response => response.json())
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.json().then(data => {
+                                        throw new Error(data.message || 'حدث خطأ أثناء محاولة حذف الاختبار');
+                                    });
+                                }
+                                return response.json();
+                            })
                             .then(res => {
                                 NotificationManager.show(res.message, 'success');
                                 examInput.remove();
-                                loadCourses();
                             })
                             .catch(err => {
-                                console.error(err);
-                                examInput.remove();
+                                console.error('Error deleting exam:', err.message);
+                                NotificationManager.show(err.message || 'حدث خطأ أثناء محاولة حذف الاختبار', 'error');
                             });
                     } else {
                         examInput.remove();
+                        NotificationManager.show('تم حذف الاختبار بنجاح', 'success');
                     }
                 }
             });
@@ -1168,6 +1341,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const courseModal = new bootstrap.Modal(document.getElementById('courseModal'));
         courseModal.show();
+        NotificationManager.show('تم تحميل بيانات الكورس بنجاح', 'success');
     };
 
     window.makeAdmin = function (userId) {
@@ -1176,12 +1350,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء ترقية المستخدم إلى ادمن');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error making admin:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء ترقية المستخدم إلى ادمن', 'error');
+                });
         }
     };
 
@@ -1191,12 +1375,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء إزالة صلاحية الادمن');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error removing admin:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء إزالة صلاحية الادمن', 'error');
+                });
         }
     };
 
@@ -1219,20 +1413,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, email, password, grade })
             })
-                .then(response => response.json().then(data => ({ status: response.status, body: data })))
-                .then(res => {
-                    NotificationManager.show(res.body.message, res.status === 200 ? 'success' : 'error');
-                    if (res.status === 200) {
-                        loadUsers();
-                        addStudentForm.reset();
-                        document.getElementById('addStudentModal').setAttribute('class', 'modal fade');
-                        document.getElementById('addStudentModal').setAttribute('style', 'display: none;');
-                        document.querySelector('.modal-backdrop').remove();
-                        document.querySelector('body').classList.remove('modal-open');
-                        document.querySelector('body').setAttribute('style', '');
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء إضافة الطالب');
+                        });
                     }
+                    return response.json();
                 })
-                .catch(err => console.error(err));
+                .then(res => {
+                    NotificationManager.show(res.message, 'success');
+                    loadUsers();
+                    addStudentForm.reset();
+                    document.getElementById('addStudentModal').setAttribute('class', 'modal fade');
+                    document.getElementById('addStudentModal').setAttribute('style', 'display: none;');
+                    document.querySelector('.modal-backdrop').remove();
+                    document.querySelector('body').classList.remove('modal-open');
+                    document.querySelector('body').setAttribute('style', '');
+                })
+                .catch(err => {
+                    console.error('Error adding student:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء إضافة الطالب', 'error');
+                });
         });
     }
 
@@ -1254,7 +1456,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(payload)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء حفظ الإشعار');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadNotifications();
@@ -1263,7 +1472,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const notificationModal = bootstrap.Modal.getInstance(document.getElementById('notificationModal'));
                     if (notificationModal) notificationModal.hide();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error saving notification:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء حفظ الإشعار', 'error');
+                });
         });
     }
 
@@ -1273,12 +1485,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'حدث خطأ أثناء حذف الإشعار');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(res => {
                     NotificationManager.show(res.message, 'success');
                     loadNotifications();
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error('Error deleting notification:', err.message);
+                    NotificationManager.show(err.message || 'حدث خطأ أثناء حذف الإشعار', 'error');
+                });
         }
     };
 
@@ -1301,6 +1523,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
         notificationModal.show();
+        NotificationManager.show('تم تحميل بيانات الإشعار بنجاح', 'success');
     };
 
     // تحسين عرض صورة الكورس المنبثقة
@@ -1308,7 +1531,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('courseImageModal');
         const modalImg = document.getElementById('courseImageModalContent');
 
-        if (!modal || !modalImg) return;
+        if (!modal || !modalImg) {
+            NotificationManager.show('حدث خطأ أثناء عرض الصورة', 'error');
+            return;
+        }
 
         modalImg.src = imageURL;
         modal.classList.add('show');
@@ -1327,31 +1553,4 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }
-
-    // إضافة وظيفة deleteCourseExam لضمان التوافقية
-    window.deleteCourseExam = function (btn, examId) {
-        if (confirm('هل أنت متأكد من حذف الاختبار؟')) {
-            const parentElement = btn.closest('.exam-input');
-            if (parentElement) {
-                if (examId) {
-                    fetch(`/api/exams/${examId}`, {
-                        method: 'DELETE',
-                        headers: { Authorization: `Bearer ${token}` }
-                    })
-                        .then(response => response.json())
-                        .then(res => {
-                            NotificationManager.show(res.message, 'success');
-                            parentElement.remove();
-                            loadCourses();
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            parentElement.remove();
-                        });
-                } else {
-                    parentElement.remove();
-                }
-            }
-        }
-    };
 });

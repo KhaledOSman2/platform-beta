@@ -42,7 +42,7 @@ async function loadCourseData() {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
-            window.location.href = 'login.html';
+            window.location.href = 'login.html?logout=1';
             return;
         }
         
@@ -50,7 +50,7 @@ async function loadCourseData() {
         const courseId = urlParams.get('id');
         
         if (!courseId) {
-            alert('لم يتم العثور على معرف الكورس');
+            NotificationManager.show('لم يتم العثور على معرف الكورس', 'error');
             window.location.href = 'courses.html';
             return;
         }
@@ -378,7 +378,7 @@ async function activateCourse() {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
-            window.location.href = 'login.html';
+            window.location.href = 'login.html?logout=1';
             return;
         }
         
@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.purchase-option').forEach(option => {
         option.addEventListener('click', function() {
             // You can implement different purchase flows based on the option clicked
-            alert('سيتم توجيهك إلى صفحة الدفع قريبًا');
+           NotificationManager.show('سيتم توجيهك إلى صفحة الدفع قريبًا');
         });
     });
     

@@ -1,100 +1,135 @@
 let currentVideoIndex = 0;
 let videos = [];
 
-// يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
-
 function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    const day = date.getDate();
-    const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-    const month = monthNames[date.getMonth()];
-    return `${day} ${month}`;
-}
-
-function adjustTitleSize() {
-    const titleElement = document.getElementById('courseTitle');
-    if (!titleElement) return;
-
-    const titleText = titleElement.textContent || '';
-    const wordCount = titleText.split(/\s+/).length;
-    const charCount = titleText.length;
-
-    // تعديل حجم الخط بناءً على عدد الكلمات وطول النص
-    if (charCount > 80) {
-        titleElement.style.fontSize = '1.2rem';
-    } else if (charCount > 60 || wordCount > 8) {
-        titleElement.style.fontSize = '1.4rem';
-    } else if (charCount > 40 || wordCount > 6) {
-        titleElement.style.fontSize = '1.7rem';
-    } else if (charCount > 20 || wordCount > 4) {
-        titleElement.style.fontSize = '2rem';
-    } else {
-        titleElement.style.fontSize = '2.5rem';
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) throw new Error('تاريخ غير صالح');
+        const day = date.getDate();
+        const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+        const month = monthNames[date.getMonth()];
+        return `${day} ${month}`;
+    } catch (error) {
+        console.error('Error formatting date:', error.message);
+        NotificationManager.show('حدث خطأ أثناء تهيئة التاريخ', 'error');
+        return '';
     }
 }
 
-// مثال: عند تحميل بيانات الكورس أو عند حدوث خطأ
+function adjustTitleSize() {
+    try {
+        const titleElement = document.getElementById('courseTitle');
+        if (!titleElement) throw new Error('عنصر العنوان غير موجود');
+
+        const titleText = titleElement.textContent || '';
+        const wordCount = titleText.split(/\s+/).length;
+        const charCount = titleText.length;
+
+        if (charCount > 80) {
+            titleElement.style.fontSize = '1.2rem';
+        } else if (charCount > 60 || wordCount > 8) {
+            titleElement.style.fontSize = '1.4rem';
+        } else if (charCount > 40 || wordCount > 6) {
+            titleElement.style.fontSize = '1.7rem';
+        } else if (charCount > 20 || wordCount > 4) {
+            titleElement.style.fontSize = '2rem';
+        } else {
+            titleElement.style.fontSize = '2.5rem';
+        }
+    } catch (error) {
+        console.error('Error adjusting title size:', error.message);
+        NotificationManager.show('حدث خطأ أثناء ضبط حجم العنوان', 'error');
+    }
+}
+
 async function loadCourseDetails() {
     try {
-        // ...عملية التحميل...
+        await new Promise(resolve => setTimeout(resolve, 500));
         NotificationManager.show('تم تحميل بيانات الكورس بنجاح', 'success');
     } catch (error) {
+        console.error('Error loading course details:', error.message);
         NotificationManager.show('حدث خطأ أثناء تحميل بيانات الكورس', 'error');
     }
 }
 
 async function loadCourseData() {
     const loadingOverlay = document.getElementById('loadingOverlay');
-    loadingOverlay.style.display = 'flex';
-
     try {
+        if (!loadingOverlay) throw new Error('عنصر التحميل غير موجود');
+        loadingOverlay.style.display = 'flex';
+
         const token = localStorage.getItem('token');
         if (!token) {
-            window.location.href = 'login.html';
-            return;
+            throw new Error('التوكن غير موجود، يرجى تسجيل الدخول');
         }
+
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
         if (!courseId) {
-            alert('لم يتم العثور على معرف الكورس');
-            return;
+            throw new Error('لم يتم العثور على معرف الكورس');
         }
+
         const courseResponse = await fetch(`/api/courses/${courseId}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        if (!courseResponse.ok) throw new Error('Network response was not ok');
+        if (!courseResponse.ok) {
+            const errorData = await courseResponse.json();
+            throw new Error(errorData.message || 'فشل في جلب بيانات الكورس');
+        }
         const course = await courseResponse.json();
-        document.getElementById('courseTitle').textContent = course.title;
-        // استدعاء دالة ضبط حجم العنوان بعد تعيين النص
+
+        const courseTitle = document.getElementById('courseTitle');
+        if (!courseTitle) throw new Error('عنصر عنوان الكورس غير موجود');
+        courseTitle.textContent = course.title || 'بدون عنوان';
         adjustTitleSize();
-        document.getElementById('courseGrade').textContent = course.grade;
-        document.getElementById('courseImage').src = course.imageURL;
-        document.getElementById('courseVideo').src = course.videoURL;
-        document.getElementById('videoTitle').textContent = course.videos[0]?.title || '';
 
-        // New: Update lecture count dynamically
+        const courseGrade = document.getElementById('courseGrade');
+        if (!courseGrade) throw new Error('عنصر الصف الدراسي غير موجود');
+        courseGrade.textContent = course.grade || 'غير محدد';
+
+        const courseImage = document.getElementById('courseImage');
+        if (!courseImage) throw new Error('عنصر صورة الكورس غير موجود');
+        courseImage.src = course.imageURL || 'images/course-placeholder.jpg';
+
+        const courseVideo = document.getElementById('courseVideo');
+        if (!courseVideo) throw new Error('عنصر الفيديو غير موجود');
+        courseVideo.src = course.videoURL || '';
+
+        const videoTitle = document.getElementById('videoTitle');
+        if (!videoTitle) throw new Error('عنصر عنوان الفيديو غير موجود');
+        videoTitle.textContent = course.videos && course.videos[0]?.title || 'بدون عنوان';
+
         const lectureCount = course.videoCount !== undefined ? course.videoCount : (course.videos ? course.videos.length : 0);
-        document.getElementById('lectureCount').textContent = `${lectureCount} محاضرات`;
+        const lectureCountEl = document.getElementById('lectureCount');
+        if (!lectureCountEl) throw new Error('عنصر عدد المحاضرات غير موجود');
+        lectureCountEl.textContent = `${lectureCount} محاضرات`;
 
-        // إصلاح: التحقق من وجود تاريخ إضافة الكورس
         if (course.addedDate) {
             const courseDate = new Date(course.addedDate);
+            if (isNaN(courseDate.getTime())) throw new Error('تاريخ إضافة الكورس غير صالح');
             const formattedCourseDate = formatDate(courseDate);
             const year = courseDate.getFullYear();
-            document.getElementById('coursedate').textContent = formattedCourseDate + ' ' + year;
+            const coursedateEl = document.getElementById('coursedate');
+            if (!coursedateEl) throw new Error('عنصر تاريخ الكورس غير موجود');
+            coursedateEl.textContent = formattedCourseDate + ' ' + year;
         } else {
-            // إذا لم يكن متوفرًا، استخدم تاريخ اليوم أو عرض رسالة بديلة
+            const today = new Date();
             const year = today.getFullYear();
-            document.getElementById('coursedate').textContent = formatDate(new Date()) + ' ' + year;
+            const coursedateEl = document.getElementById('coursedate');
+            if (!coursedateEl) throw new Error('عنصر تاريخ الكورس غير موجود');
+            coursedateEl.textContent = formatDate(today) + ' ' + year;
         }
-
-
 
         videos = course.videos || [];
         const videosList = document.getElementById('videosList');
+        if (!videosList) throw new Error('عنصر قائمة الفيديوهات غير موجود');
         videosList.innerHTML = '';
+
+        const noVideoMessage = document.getElementById('noVideoMessage');
+        if (!noVideoMessage) throw new Error('عنصر رسالة عدم وجود فيديوهات غير موجود');
+
         if (videos.length > 0) {
-            document.getElementById('noVideoMessage').style.display = 'none';
+            noVideoMessage.style.display = 'none';
             videos.forEach((video, index) => {
                 const li = document.createElement('div');
                 li.className = 'content-item videos';
@@ -102,14 +137,14 @@ async function loadCourseData() {
                     <div class="content-item-header">
                         <div class="content-item-title">
                             <i class="fas fa-video"></i>
-                            <span>المحاضرة ${index + 1}:</span></span>
+                            <span>المحاضرة ${index + 1}:</span>
                         </div>
                         <div class="content-item-badge">
                             <i class="fas fa-calendar-alt"></i>
-                                        ${formatDate(video.addedDate)}
+                            ${formatDate(video.addedDate || new Date())}
                         </div>
-                                </div>
-                    <div class="content-item-body">${video.title}</div>
+                    </div>
+                    <div class="content-item-body">${video.title || 'بدون عنوان'}</div>
                 `;
                 li.dataset.index = index;
                 li.addEventListener('click', () => {
@@ -121,8 +156,8 @@ async function loadCourseData() {
             updateNavButtons();
             highlightCurrentVideo();
         } else {
-            document.getElementById('courseVideo').style.display = 'none';
-            document.getElementById('noVideoMessage').style.display = 'block';
+            courseVideo.style.display = 'none';
+            noVideoMessage.style.display = 'block';
             videosList.innerHTML = `
                 <div class="empty-content-item videos">
                     <i class="fas fa-video-slash"></i>
@@ -132,7 +167,9 @@ async function loadCourseData() {
         }
 
         const activitiesList = document.getElementById('activitiesList');
+        if (!activitiesList) throw new Error('عنصر قائمة المستندات غير موجود');
         activitiesList.innerHTML = '';
+
         if (course.activities && course.activities.length > 0) {
             course.activities.forEach((activity, index) => {
                 const li = document.createElement('div');
@@ -141,20 +178,19 @@ async function loadCourseData() {
                     <div class="content-item-header">
                         <div class="content-item-title">
                             <i class="fas fa-file-pdf"></i>
-                            <span>المستند ${index + 1}:</span></span>
+                            <span>المستند ${index + 1}:</span>
                         </div>
                         <div class="content-item-badge">
                             <i class="fas fa-calendar-alt"></i>
-                                        ${formatDate(activity.addedDate)}
-                                </div>
-                            </div>
-                    <div class="content-item-body">${activity.title}</div>
-                        `;
+                            ${formatDate(activity.addedDate || new Date())}
+                        </div>
+                    </div>
+                    <div class="content-item-body">${activity.title || 'بدون عنوان'}</div>
+                `;
                 li.style.cursor = 'pointer';
                 li.addEventListener('click', () => {
-                    // Create an anchor element to trigger download
                     const downloadLink = document.createElement('a');
-                    downloadLink.href = activity.filePath;
+                    downloadLink.href = activity.filePath || '#';
                     downloadLink.download = activity.title || `document-${index + 1}`;
                     downloadLink.style.display = 'none';
                     document.body.appendChild(downloadLink);
@@ -173,154 +209,228 @@ async function loadCourseData() {
         }
 
         const examsList = document.getElementById('examsList');
+        if (!examsList) throw new Error('عنصر قائمة الاختبارات غير موجود');
         examsList.innerHTML = '';
-        try {
-            const examsResponse = await fetch(`/api/exams?courseId=${courseId}&grade=${course.grade}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!examsResponse.ok) throw new Error('Network response was not ok');
-            const { exams } = await examsResponse.json();
-            if (exams && exams.length > 0) {
-                exams.forEach((exam, index) => {
-                    const li = document.createElement('div');
-                    li.className = 'content-item exams';
-                    li.innerHTML = `
-                        <div class="content-item-header">
-                            <div class="content-item-title">
-                                <i class="fas fa-clipboard-check"></i>
-                                <span>الاختبار ${index + 1}:</span></span>
-                            </div>
-                            <div class="content-item-badge">
-                                <i class="fas fa-calendar-alt"></i>
-                                        ${formatDate(exam.addedDate)}
-                                </div>
-                            </div>
-                        <div class="content-item-body">${exam.title}</div>
-                        `;
-                    li.style.cursor = 'pointer';
-                    li.addEventListener('click', () => {
-                        viewExam(exam.googleFormUrl, exam.title);
-                    });
-                    examsList.appendChild(li);
+
+        const exams = course.exams || [];
+        if (exams.length > 0) {
+            exams.forEach((exam, index) => {
+                const li = document.createElement('div');
+                li.className = 'content-item exams';
+                li.innerHTML = `
+                    <div class="content-item-header">
+                        <div class="content-item-title">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>الاختبار ${index + 1}:</span>
+                        </div>
+                        <div class="content-item-badge">
+                            <i class="fas fa-calendar-alt"></i>
+                            ${formatDate(exam.addedDate || new Date())}
+                        </div>
+                    </div>
+                    <div class="content-item-body">${exam.title || 'بدون عنوان'}</div>
+                `;
+                li.style.cursor = 'pointer';
+                li.addEventListener('click', () => {
+                    viewExam(exam.googleFormUrl, exam.title);
                 });
-            } else {
-                examsList.innerHTML = `
-                    <div class="empty-content-item exams">
-                        <i class="fas fa-clipboard-check"></i>
-                        <div class="empty-title">لا تتوفر اختبارات حاليا</div>
-                        <div class="empty-message">سيتم إضافة الاختبارات عند انتهاء شرح الدروس</div>
-                    </div>`;
-            }
-        } catch (examsError) {
-            console.error('Error loading exams:', examsError);
+                examsList.appendChild(li);
+            });
+        } else {
             examsList.innerHTML = `
                 <div class="empty-content-item exams">
                     <i class="fas fa-clipboard-check"></i>
                     <div class="empty-title">لا تتوفر اختبارات حاليا</div>
                     <div class="empty-message">سيتم إضافة الاختبارات عند انتهاء شرح الدروس</div>
                 </div>`;
-            localStorage.removeItem('token');
-            window.location.href = 'login.html';
-            alert('انتهت صلاحية الجلسة الرجاء تسجيل الدخول مرة أخرى.');
-        }
+                    }
+
+        NotificationManager.show('تم تحميل بيانات الكورس بنجاح', 'success');
     } catch (error) {
-        console.error('Error loading course data:', error);
-        alert('حدث خطأ أثناء جلب بيانات الكورس');
+        console.error('Error loading course data:', error.message);
+        NotificationManager.show(error.message || 'حدث خطأ أثناء تحميل بيانات الكورس', 'error');
+        if (error.message.includes('التوكن') || error.message.includes('معرف الكورس')) {
+            window.location.href = 'login.html?logout=1';
+        }
     } finally {
-        loadingOverlay.style.opacity = '0';
-        setTimeout(() => loadingOverlay.style.display = 'none', 300);
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => loadingOverlay.style.display = 'none', 300);
+        }
     }
 }
 
 function updateVideo() {
-    const video = videos[currentVideoIndex];
-    document.getElementById('courseVideo').src = video.url;
-    document.getElementById('videoTitle').textContent = video.title;
-    updateNavButtons();
-    highlightCurrentVideo();
+    try {
+        const video = videos[currentVideoIndex];
+        if (!video) throw new Error('الفيديو غير موجود');
+
+        const courseVideo = document.getElementById('courseVideo');
+        if (!courseVideo) throw new Error('عنصر الفيديو غير موجود');
+        courseVideo.src = video.url || '';
+
+        const videoTitle = document.getElementById('videoTitle');
+        if (!videoTitle) throw new Error('عنصر عنوان الفيديو غير موجود');
+        videoTitle.textContent = video.title || 'بدون عنوان';
+
+        updateNavButtons();
+        highlightCurrentVideo();
+    } catch (error) {
+        console.error('Error updating video:', error.message);
+        NotificationManager.show('حدث خطأ أثناء تحديث الفيديو', 'error');
+    }
 }
 
 function updateNavButtons() {
-    const prevBtn = document.getElementById('prevVideoBtn');
-    const nextBtn = document.getElementById('nextVideoBtn');
-    prevBtn.disabled = currentVideoIndex === 0;
-    nextBtn.disabled = currentVideoIndex === videos.length - 1;
+    try {
+        const prevBtn = document.getElementById('prevVideoBtn');
+        const nextBtn = document.getElementById('nextVideoBtn');
+        if (!prevBtn || !nextBtn) throw new Error('أزرار التنقل غير موجودة');
+
+        prevBtn.disabled = currentVideoIndex === 0;
+        nextBtn.disabled = currentVideoIndex === videos.length - 1;
+    } catch (error) {
+        console.error('Error updating nav buttons:', error.message);
+        NotificationManager.show('حدث خطأ أثناء تحديث أزرار التنقل', 'error');
+    }
 }
 
 function highlightCurrentVideo() {
-    const items = document.querySelectorAll('#videosList .content-item');
-    items.forEach(item => {
-        item.classList.remove('current');
-        item.style.pointerEvents = 'auto';
-    });
+    try {
+        const items = document.querySelectorAll('#videosList .content-item');
+        items.forEach(item => {
+            item.classList.remove('current');
+            item.style.pointerEvents = 'auto';
+        });
 
-    if (items.length > currentVideoIndex) {
-        items[currentVideoIndex].classList.add('current');
+        if (items.length > currentVideoIndex) {
+            items[currentVideoIndex].classList.add('current');
+        }
+    } catch (error) {
+        console.error('Error highlighting current video:', error.message);
+        NotificationManager.show('حدث خطأ أثناء تمييز الفيديو الحالي', 'error');
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadCourseData();
+    try {
+        loadCourseData();
 
-    document.querySelectorAll('.card-header').forEach(header => {
-        header.addEventListener('click', function () {
-            const cardBody = this.nextElementSibling;
+        document.querySelectorAll('.card-header').forEach(header => {
+            header.addEventListener('click', function () {
+                try {
+                    const cardBody = this.nextElementSibling;
+                    if (!cardBody) throw new Error('عنصر جسم البطاقة غير موجود');
 
-            cardBody.classList.toggle('show');
+                    cardBody.classList.toggle('show');
 
-            const isExpanded = this.getAttribute('aria-expanded') === 'true';
-            this.setAttribute('aria-expanded', !isExpanded);
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
 
-            const icon = this.querySelector('i:last-child');
-            if (isExpanded) {
-                icon.style.transform = 'rotate(0deg)';
-            } else {
-                icon.style.transform = 'rotate(180deg)';
+                    const icon = this.querySelector('i:last-child');
+                    if (!icon) throw new Error('أيقونة التحكم غير موجودة');
+                    if (isExpanded) {
+                        icon.style.transform = 'rotate(0deg)';
+                    } else {
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                } catch (error) {
+                    console.error('Error toggling card header:', error.message);
+                    NotificationManager.show('حدث خطأ أثناء تبديل القسم', 'error');
+                }
+            });
+        });
+
+        const revealElements = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        revealElements.forEach(el => observer.observe(el));
+
+        const prevVideoBtn = document.getElementById('prevVideoBtn');
+        const nextVideoBtn = document.getElementById('nextVideoBtn');
+        if (!prevVideoBtn || !nextVideoBtn) throw new Error('أزرار التنقل بالفيديو غير موجودة');
+
+        prevVideoBtn.addEventListener('click', () => {
+            try {
+                if (currentVideoIndex > 0) {
+                    currentVideoIndex--;
+                    updateVideo();
+                }
+            } catch (error) {
+                console.error('Error navigating to previous video:', error.message);
+                NotificationManager.show('حدث خطأ أثناء الانتقال إلى الفيديو السابق', 'error');
             }
         });
-    });
 
-    const revealElements = document.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('active');
-                observer.unobserve(entry.target);
+        nextVideoBtn.addEventListener('click', () => {
+            try {
+                if (currentVideoIndex < videos.length - 1) {
+                    currentVideoIndex++;
+                    updateVideo();
+                }
+            } catch (error) {
+                console.error('Error navigating to next video:', error.message);
+                NotificationManager.show('حدث خطأ أثناء الانتقال إلى الفيديو التالي', 'error');
             }
         });
-    }, { threshold: 0.1 });
-    revealElements.forEach(el => observer.observe(el));
 
-    document.getElementById('prevVideoBtn').addEventListener('click', () => {
-        if (currentVideoIndex > 0) {
-            currentVideoIndex--;
-            updateVideo();
-        }
-    });
-    document.getElementById('nextVideoBtn').addEventListener('click', () => {
-        if (currentVideoIndex < videos.length - 1) {
-            currentVideoIndex++;
-            updateVideo();
-        }
-    });
-
-    // إضافة استدعاء لضبط حجم العنوان عند تغيير حجم النافذة
-    window.addEventListener('resize', adjustTitleSize);
+        window.addEventListener('resize', () => {
+            try {
+                adjustTitleSize();
+            } catch (error) {
+                console.error('Error on resize:', error.message);
+                NotificationManager.show('حدث خطأ أثناء إعادة ضبط حجم العنوان', 'error');
+            }
+        });
+    } catch (error) {
+        console.error('Error initializing page:', error.message);
+        NotificationManager.show('حدث خطأ أثناء تهيئة الصفحة', 'error');
+    }
 });
 
 function viewExam(googleFormUrl, examTitle) {
-    const examModal = new bootstrap.Modal(document.getElementById('examModal'));
-    document.getElementById('examIframe').src = googleFormUrl;
-    document.getElementById('examModalLabel').textContent = examTitle;
-    examModal.show();
+    try {
+        if (!googleFormUrl || !examTitle) throw new Error('رابط الاختبار أو العنوان غير صالح');
+        const examModal = new bootstrap.Modal(document.getElementById('examModal'));
+        if (!examModal) throw new Error('نافذة الاختبار غير موجودة');
+
+        const examIframe = document.getElementById('examIframe');
+        if (!examIframe) throw new Error('إطار الاختبار غير موجود');
+        examIframe.src = googleFormUrl;
+
+        const examModalLabel = document.getElementById('examModalLabel');
+        if (!examModalLabel) throw new Error('عنوان نافذة الاختبار غير موجود');
+        examModalLabel.textContent = examTitle;
+
+        examModal.show();
+    } catch (error) {
+        console.error('Error viewing exam:', error.message);
+        NotificationManager.show('حدث خطأ أثناء عرض الاختبار', 'error');
+    }
 }
 
 window.onscroll = function () {
-    const backToTopBtn = document.getElementById("backToTopBtn");
-    backToTopBtn.style.display = (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) ? "block" : "none";
+    try {
+        const backToTopBtn = document.getElementById("backToTopBtn");
+        if (!backToTopBtn) throw new Error('زر العودة إلى الأعلى غير موجود');
+        backToTopBtn.style.display = (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) ? "block" : "none";
+    } catch (error) {
+        console.error('Error handling scroll:', error.message);
+        NotificationManager.show('حدث خطأ أثناء معالجة التمرير', 'error');
+    }
 };
 
 function topFunction() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+        console.error('Error scrolling to top:', error.message);
+        NotificationManager.show('حدث خطأ أثناء العودة إلى أعلى الصفحة', 'error');
+    }
 }
-
