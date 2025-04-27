@@ -6,6 +6,43 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const xss = require('xss-clean'); // لتنظيف مدخلات المستخدم
 require('dotenv').config();
+
+// إضافة معالج الأخطاء العام
+class AppError extends Error {
+    constructor(message, statusCode) {
+        super(message);
+        this.statusCode = statusCode;
+        this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+        Error.captureStackTrace(this, this.constructor);
+    }
+}
+
+// ميدلوير لمعالجة أخطاء MongoDB
+const handleMongoError = (err, req, res, next) => {
+    if (err.name === 'MongoServerError') {
+        if (err.code === 11000) {
+            // معالجة خطأ التكرار في البيانات
+            const field = Object.keys(err.keyPattern)[0];
+            return res.status(400).json({
+                status: 'error',
+                message: field === 'email' ? 'البريد الإلكتروني موجود مسبقًا' : `القيمة مكررة في الحقل ${field}`
+            });
+        }
+    }
+    next(err);
+};
+
+// معالج الأخطاء العام
+const globalErrorHandler = (err, req, res, next) => {
+    err.statusCode = err.statusCode || 500;
+    err.status = err.status || 'error';
+
+    res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message || 'حدث خطأ داخلي'
+    });
+};
+
 const {
     User,
     Course,
@@ -23,6 +60,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(xss()); // استخدام xss-clean لتنظيف المدخلات
+
+// تطبيق معالج أخطاء MongoDB
+app.use(handleMongoError);
+app.use(globalErrorHandler);
 
 // ميدلوير للتحقق من التوكن
 async function authenticateToken(req, res, next) {
@@ -122,13 +163,18 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
 });
 
 // تعديل بيانات المستخدم: بعد التحديث يتم إرسال علم لتسجيل الخروج مع رسالة معلومات الطلب
-app.put('/api/users/:id', authenticateToken, async (req, res) => {
-    const userId = parseInt(req.params.id);
-    // السماح بالتحديث إذا كان المستخدم هو نفسه أو المسؤول
-    if (!req.user.isAdmin && req.user.id !== userId) return res.sendStatus(403);
+app.put('/api/users/:id', authenticateToken, async (req, res, next) => {
+    try {
+        const userId = parseInt(req.params.id);
+        if (!req.user.isAdmin && req.user.id !== userId) {
+            throw new AppError('غير مصرح لك بتعديل بيانات هذا المستخدم', 403);
+        }
 
-    const user = await User.findOne({ id: userId });
-    if (user) {
+        const user = await User.findOne({ id: userId });
+        if (!user) {
+            throw new AppError('المستخدم غير موجود', 404);
+        }
+
         const { username, password, email, grade } = req.body;
 
         if (req.user.isAdmin) {
@@ -148,8 +194,8 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
         } else {
             res.json({ message: 'تم تحديث البيانات بنجاح.' });
         }
-    } else {
-        res.status(404).json({ message: 'المستخدم غير موجود' });
+    } catch (error) {
+        next(error);
     }
 });
 

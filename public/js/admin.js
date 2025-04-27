@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadGrades();
                     gradeForm.reset();
                     const gradeModal = bootstrap.Modal.getInstance(document.getElementById('gradeModal'));
@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadGrades();
                 })
                 .catch(err => console.error(err));
@@ -824,7 +824,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadCourses();
                     courseForm.reset();
                     document.getElementById('courseId').value = '';
@@ -884,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     btn.parentElement.remove();
                     loadCourses();
                 })
@@ -921,7 +921,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     btn.parentElement.remove();
                     loadCourses();
                 })
@@ -978,7 +978,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadUsers();
                     userForm.reset();
                     const userModal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
@@ -996,7 +996,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     location.reload();
                 })
                 .catch(err => console.error(err));
@@ -1041,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
                 .catch(err => console.error(err));
@@ -1056,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
                 .catch(err => console.error(err));
@@ -1071,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     location.reload();
                 })
                 .catch(err => console.error(err));
@@ -1149,7 +1149,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         })
                             .then(response => response.json())
                             .then(res => {
-                                alert(res.message);
+                                NotificationManager.show(res.message, 'success');
                                 examInput.remove();
                                 loadCourses();
                             })
@@ -1178,7 +1178,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
                 .catch(err => console.error(err));
@@ -1193,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadUsers();
                 })
                 .catch(err => console.error(err));
@@ -1210,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const grade = sanitizeInput(document.getElementById('newGrade').value);
 
             if (window.allUsers && window.allUsers.find(user => user.email === email)) {
-                alert('البريد الإلكتروني موجود مسبقًا');
+                NotificationManager.show('البريد الإلكتروني موجود مسبقًا', 'error');
                 return;
             }
 
@@ -1221,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json().then(data => ({ status: response.status, body: data })))
                 .then(res => {
-                    alert(res.body.message);
+                    NotificationManager.show(res.body.message, res.status === 200 ? 'success' : 'error');
                     if (res.status === 200) {
                         loadUsers();
                         addStudentForm.reset();
@@ -1256,7 +1256,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadNotifications();
                     notificationForm.reset();
                     document.getElementById('notificationId').value = '';
@@ -1275,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => response.json())
                 .then(res => {
-                    alert(res.message);
+                    NotificationManager.show(res.message, 'success');
                     loadNotifications();
                 })
                 .catch(err => console.error(err));
@@ -1340,7 +1340,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     })
                         .then(response => response.json())
                         .then(res => {
-                            alert(res.message);
+                            NotificationManager.show(res.message, 'success');
                             parentElement.remove();
                             loadCourses();
                         })

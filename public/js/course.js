@@ -1,6 +1,8 @@
 let currentVideoIndex = 0;
 let videos = [];
 
+// يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
+
 function formatDate(dateStr) {
     const date = new Date(dateStr);
     const day = date.getDate();
@@ -28,6 +30,16 @@ function adjustTitleSize() {
         titleElement.style.fontSize = '2rem';
     } else {
         titleElement.style.fontSize = '2.5rem';
+    }
+}
+
+// مثال: عند تحميل بيانات الكورس أو عند حدوث خطأ
+async function loadCourseDetails() {
+    try {
+        // ...عملية التحميل...
+        NotificationManager.show('تم تحميل بيانات الكورس بنجاح', 'success');
+    } catch (error) {
+        NotificationManager.show('حدث خطأ أثناء تحميل بيانات الكورس', 'error');
     }
 }
 

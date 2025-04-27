@@ -6,6 +6,7 @@
     }
 })();
 
+// يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
 
 document.addEventListener('DOMContentLoaded', function () {
     const token = localStorage.getItem('token');
@@ -971,6 +972,16 @@ function debounce(func, delay) {
 function applyAdvancedFilters() {
     codesPage = 1; // Reset to first page when changing filters
     loadCodes(codesPage);
+}
+
+// مثال: عند تفعيل كود اشتراك أو عند حدوث خطأ
+function activateAdminSubscription() {
+    try {
+        // ...عملية التفعيل...
+        NotificationManager.show('تم تفعيل كود الاشتراك بنجاح', 'success');
+    } catch (error) {
+        NotificationManager.show('حدث خطأ أثناء تفعيل كود الاشتراك', 'error');
+    }
 }
 
 });

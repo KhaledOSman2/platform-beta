@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 });
 
+// يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
 document.addEventListener('DOMContentLoaded', function () {
     // التحقق من حالة تسجيل الدخول
     const isLoggedIn = !!localStorage.getItem('token');
@@ -149,10 +150,9 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.removeItem('user');
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('user');
-
+        // إظهار رسالة تم تسجيل الخروج بنجاح
+        NotificationManager.show('تم تسجيل الخروج بنجاح', 'success');
         // إعادة تحميل الصفحة أو الانتقال لصفحة تسجيل الدخول
         window.location.href = 'login.html';
-        // إظهار رسالة تم تسجيل الخروج بنجاح
-        alert('تم تسجيل الخروج بنجاح');
     });
 });

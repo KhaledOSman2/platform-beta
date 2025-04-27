@@ -297,6 +297,7 @@ function showActivationModal() {
 }
 
 // Enhanced activation function
+// يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
 async function activateSubscription() {
     const activationCode = document.getElementById('activationCode').value.trim();
     const errorElement = document.getElementById('codeError');
@@ -319,9 +320,11 @@ async function activateSubscription() {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         // On success
+        NotificationManager.show('تم تفعيل الاشتراك بنجاح', 'success');
         showSuccessModal();
     } catch (error) {
         // Handle error
+        NotificationManager.show('حدث خطأ أثناء تفعيل الاشتراك', 'error');
         document.getElementById('activationCode').classList.add('is-invalid');
         errorElement.textContent = 'كود التفعيل غير صحيح أو منتهي الصلاحية';
     } finally {

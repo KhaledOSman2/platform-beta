@@ -1,3 +1,4 @@
+// يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
 document.addEventListener('DOMContentLoaded', function () {
     // التحقق من وجود التوكن في localStorage
     const token = localStorage.getItem('token');
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(updatedData)
             });
             const result = await response.json();
-            alert(result.message);
+            NotificationManager.show(result.message, 'success');
             // إذا تم إرسال علم logout، نقوم بتسجيل الخروج وإعادة التوجيه
             if (result.logout) {
                 localStorage.removeItem('token');
@@ -148,6 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             document.getElementById('password').value = '';
         } catch (error) {
+            NotificationManager.show('حدث خطأ أثناء تحديث البيانات', 'error');
             console.error('Error updating profile:', error);
         }
     });
@@ -189,13 +191,14 @@ async function fetchCourses() {
             localStorage.removeItem('token');
             localStorage.removeItem('grade');
             window.location.href = 'login.html';
-            alert('انتهت صلاحية الجلسة الرجاء تسجيل الدخول مرة أخرى.');
+            NotificationManager.show('انتهت صلاحية الجلسة الرجاء تسجيل الدخول مرة أخرى.', 'error');
             return;
         }
 
         const courses = await response.json();
         displayCourses(courses);
     } catch (error) {
+        NotificationManager.show('حدث خطأ أثناء جلب الكورسات', 'error');
         console.error('حدث خطأ أثناء جلب الكورسات:', error);
     }
 }
@@ -361,9 +364,6 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.removeItem('user');
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('user');
-
-        // إظهار رسالة تم تسجيل الخروج بنجاح
-        alert('تم تسجيل الخروج بنجاح');
 
         // إعادة تحميل الصفحة أو الانتقال لصفحة تسجيل الدخول
         window.location.href = 'login.html';

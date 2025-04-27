@@ -323,3 +323,14 @@ function checkVisibleCourses() {
     // تحديث عدد الكورسات المرئية في قسم التصفية
     document.getElementById('totalCoursesCount').textContent = visibleCoursesCount;
 }
+
+// يجب تضمين notification-manager.js في الصفحة قبل هذا الملف
+// مثال: عند إضافة كورس للمفضلة أو عند حدوث خطأ
+function addToFavorites(courseId) {
+    try {
+        // ...عملية الإضافة...
+        NotificationManager.show('تمت إضافة الكورس إلى المفضلة', 'success');
+    } catch (error) {
+        NotificationManager.show('حدث خطأ أثناء إضافة الكورس إلى المفضلة', 'error');
+    }
+}
