@@ -48,21 +48,21 @@ function setupRoutes(app) {
         res.sendFile(path.join(__dirname, 'public/html/courses.html'));
     });
     // صفحة الكورس محمية (يجب أن يكون المستخدم مسجلاً)
-    app.get('/course', authenticateTokenForRoute, (req, res) => {
+    app.get('/course', (req, res) => {
         res.sendFile(path.join(__dirname, 'public/html/course.html'));
     });
     // لوحة تحكم الطالب محمية
-    app.get('/dashboard', authenticateTokenForRoute, (req, res) => {
+    app.get('/dashboard', (req, res) => {
         res.sendFile(path.join(__dirname, 'public/html/dashboard.html'));
     });
-    app.get('/subscription', authenticateTokenForRoute, (req, res) => {
+    app.get('/subscription', (req, res) => {
         res.sendFile(path.join(__dirname, 'public/html/subscription.html'));
     });
     // صفحات الأدمن محمية ويجب أن يكون المستخدم أدمن
-    app.get('/admin', authenticateTokenForRoute, requireAdmin, (req, res) => {
+    app.get('/admin', (req, res) => {
         res.sendFile(path.join(__dirname, 'public/html/admin.html'));
     });
-    app.get('/admin-subs', authenticateTokenForRoute, requireAdmin, (req, res) => {
+    app.get('/admin-subs', (req, res) => {
         res.sendFile(path.join(__dirname, 'public/html/admin-subs.html'));
     });
     // يمكنك إضافة المزيد من المسارات حسب الحاجة
