@@ -42,7 +42,7 @@ async function loadCourseData() {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
-            window.location.href = 'login.html?logout=1';
+            window.location.href = 'login?logout=1';
             return;
         }
         
@@ -51,7 +51,7 @@ async function loadCourseData() {
         
         if (!courseId) {
             NotificationManager.show('لم يتم العثور على معرف الكورس', 'error');
-            window.location.href = 'courses.html';
+            window.location.href = 'courses';
             return;
         }
         
@@ -228,7 +228,7 @@ function updateSubscriptionStatusUI() {
         `;
         
         subscribeBtn.addEventListener('click', () => {
-            window.location.href = `course.html?id=${courseData.id}`;
+            window.location.href = `course?id=${courseData.id}`;
         });
         
         // Remove locked overlays
@@ -349,7 +349,7 @@ function showSuccessModal() {
     
     // Set up view course button
     document.getElementById('viewCourseBtn').addEventListener('click', () => {
-        window.location.href = `course.html?id=${courseData.id}`;
+        window.location.href = `course?id=${courseData.id}`;
     });
 }
 
@@ -378,7 +378,7 @@ async function activateCourse() {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
-            window.location.href = 'login.html?logout=1';
+            window.location.href = 'login?logout=1';
             return;
         }
         

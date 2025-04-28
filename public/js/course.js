@@ -250,7 +250,7 @@ async function loadCourseData() {
         console.error('Error loading course data:', error.message);
         NotificationManager.show(error.message || 'حدث خطأ أثناء تحميل بيانات الكورس', 'error');
         if (error.message.includes('التوكن') || error.message.includes('معرف الكورس')) {
-            window.location.href = 'login.html?logout=1';
+            window.location.href = 'login?logout=1';
         }
     } finally {
         if (loadingOverlay) {

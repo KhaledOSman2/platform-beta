@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function () {
     const currentPath = window.location.pathname;
 
-    if (currentPath.endsWith('login.html')) {
+    if (currentPath.endsWith('login')) {
         const urlParams = new URLSearchParams(window.location.search);
         const redirectFrom = urlParams.get('from');
 
@@ -35,14 +35,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Skip token validation if already handled by preload script
-    const isProtectedPage = currentPath.endsWith('dashboard.html') ||
-        currentPath.endsWith('admin.html') ||
-        currentPath.endsWith('course.html');
+    const isProtectedPage = currentPath.endsWith('dashboard') ||
+        currentPath.endsWith('admin') ||
+        currentPath.endsWith('course');
 
     // For pages that aren't protected or don't have preload scripts
     if (!isProtectedPage) {
         // تحميل قائمة الصفوف الدراسية في نموذج التسجيل
-        if (currentPath.endsWith('register.html')) {
+        if (currentPath.endsWith('register')) {
             const gradeSelect = document.getElementById('grade');
             try {
                 const gradesResponse = await fetch('/api/grades');
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                     ${course.videosCount !== undefined ? course.videosCount : 0} محاضرات
                                 </span>
                                 <button class="watch-cta-button" 
-                                        onclick="window.location.href='course.html?id=${course.id}'">
+                                        onclick="window.location.href='course?id=${course.id}'">
                                     مشاهدة الكورس
                                 </button>
                             </div>
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 localStorage.removeItem('user');
                 sessionStorage.removeItem('token');
                 sessionStorage.removeItem('user');
-                window.location.href = 'login.html?logout=1';
+                window.location.href = 'login?logout=1';
             } catch (error) {
                 console.error('Error logging out:', error.message);
                 NotificationManager.show('حدث خطأ أثناء تسجيل الخروج', 'error');

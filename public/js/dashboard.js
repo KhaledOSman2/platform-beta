@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     localStorage.removeItem('token');
                     localStorage.removeItem('grade');
                     localStorage.removeItem('cachedUserData');
-                    window.location.href = 'login.html?logout=1';
+                    window.location.href = 'login?logout=1';
                 }
                 document.getElementById('password').value = '';
             } catch (error) {
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 localStorage.removeItem('cachedUserData');
                 sessionStorage.removeItem('token');
                 sessionStorage.removeItem('user');
-                window.location.href = 'login.html?logout=1';
+                window.location.href = 'login?logout=1';
             } catch (error) {
                 console.error('Error logging out:', error.message);
                 NotificationManager.show('حدث خطأ أثناء تسجيل الخروج', 'error');
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (error) {
         console.error('Error initializing dashboard:', error.message);
         NotificationManager.show('حدث خطأ أثناء تهيئة لوحة التحكم', 'error');
-        window.location.href = 'login.html?logout=1';
+        window.location.href = 'login?logout=1';
     }
 });
 
@@ -272,7 +272,7 @@ async function fetchCourses() {
             localStorage.removeItem('token');
             localStorage.removeItem('grade');
             localStorage.removeItem('cachedUserData');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
             throw new Error('انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى');
         }
 
@@ -342,7 +342,7 @@ function displayCourses(courses) {
                                     ${course.videosCount !== undefined ? course.videosCount : 0} محاضرات
                                 </span>
                                 <button class="watch-cta-button" 
-                                        onclick="window.location.href='course.html?id=${course.id}'">
+                                        onclick="window.location.href='course?id=${course.id}'">
                                     مشاهدة الكورس
                                 </button>
                             </div>

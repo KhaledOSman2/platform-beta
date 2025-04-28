@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                     </div>
                                 </div>
                                 <button class="watch-cta-button mt-3 w-100"; 
-                                        onclick="window.location.href='course.html?id=${course.id}'">
+                                        onclick="window.location.href='course?id=${course.id}'">
                                     <i class="fas fa-play me-2"></i> مشاهدة الكورس
                                 </button>
                             </div>
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 localStorage.removeItem('user');
                 sessionStorage.removeItem('token');
                 sessionStorage.removeItem('user');
-                window.location.href = 'login.html?logout=1';
+                window.location.href = 'login?logout=1';
             } catch (error) {
                 console.error('Error logging out:', error.message);
                 NotificationManager.show('حدث خطأ أثناء تسجيل الخروج', 'error');

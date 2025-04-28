@@ -2,7 +2,7 @@
 (function () {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.replace('login.html?from=admin');
+        window.location.replace('login?from=admin');
     }
 })();
 
@@ -11,7 +11,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = 'login.html?from=admin';
+        window.location.href = 'login?from=admin';
         return;
     }
     
