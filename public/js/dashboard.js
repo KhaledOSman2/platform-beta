@@ -507,32 +507,34 @@ async function loadNotifications() {
         notificationsDropdown.innerHTML = '';
 
         const userGrade = await getUserGrade();
-        const cachedNotifications = getCachedNotifications(userGrade);
-
-        if (cachedNotifications) {
-            displayNotifications(cachedNotifications, userGrade);
-            return;
-        }
-
         const token = localStorage.getItem('token');
         if (!token) throw new Error('التوكن غير موجود، يرجى تسجيل الدخول');
 
-        const response = await fetch('/api/notifications', {
+        // جلب عدد الإشعارات من السيرفر فقط
+        const countResponse = await fetch('/api/notifications', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
-        if (!response.ok) {
-            const errorData = await response.json();
+        if (!countResponse.ok) {
+            const errorData = await countResponse.json();
             throw new Error(errorData.message || 'فشل في جلب الإشعارات');
         }
-        let notifications = await response.json();
-
-        notifications = notifications.filter(notification =>
+        let notificationsFromServer = await countResponse.json();
+        notificationsFromServer = notificationsFromServer.filter(notification =>
             !notification.grade ||
             notification.grade === 'عام' ||
             notification.grade === userGrade
         );
-        setCachedNotifications(notifications, userGrade);
-        displayNotifications(notifications, userGrade);
+        const serverCount = notificationsFromServer.length;
+
+        const cachedNotifications = getCachedNotifications(userGrade);
+        if (cachedNotifications && cachedNotifications.length === serverCount) {
+            displayNotifications(cachedNotifications, userGrade);
+            isLoadingNotifications = false;
+            return;
+        }
+        // إذا لم يوجد كاش أو العدد مختلف، استخدم بيانات السيرفر وحدّث الكاش
+        setCachedNotifications(notificationsFromServer, userGrade);
+        displayNotifications(notificationsFromServer, userGrade);
     } catch (error) {
         console.error('Error fetching notifications:', error.message);
         const userGrade = await getUserGrade();
