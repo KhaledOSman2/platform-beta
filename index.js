@@ -13,6 +13,7 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const xss = require('xss-clean'); // لتنظيف مدخلات المستخدم
+const cookieParser = require('cookie-parser'); // إضافة cookie-parser
 require('dotenv').config();
 
 // إضافة معالج الأخطاء العام
@@ -64,6 +65,8 @@ const app = express();
 const PORT = 4000;
 const JWT_SECRET = "914a20dddcf9c8d07abf5a4fd19c9895761b2381ca439db756a4a1c479ad37c0";
 
+app.use(cookieParser());
+
 // استيراد وتفعيل نظام المسارات النظيفة
 const setupRoutes = require('./routes');
 setupRoutes(app);
@@ -79,23 +82,33 @@ app.use(globalErrorHandler);
 
 // ميدلوير للتحقق من التوكن
 async function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // نتوقع "Bearer TOKEN"
-    if (!token) return res.sendStatus(401);
-
-    jwt.verify(token, JWT_SECRET, async (err, user) => {
-        if (err) return res.sendStatus(403);
-        try {
-            const currentUser = await User.findOne({ id: user.id });
-            if (currentUser && currentUser.isBanned) {
-                return res.status(403).json({ message: 'حسابك محظور. يرجى التواصل مع الدعم الفني.' });
-            }
-            req.user = user;
-            next();
-        } catch (e) {
-            return res.sendStatus(500);
+    // أولاً، حاول استخدام الكوكي (الأكثر أماناً)
+    let token = req.cookies?.token;
+    
+    // احتياطياً، تحقق من الهيدر لأغراض التوافق الخلفي
+    if (!token) {
+        const authHeader = req.headers['authorization'];
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
         }
-    });
+    }
+    
+    if (!token) return res.status(401).json({ message: 'غير مصرح، يرجى تسجيل الدخول' });
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const currentUser = await User.findOne({ id: decoded.id });
+        
+        if (!currentUser || currentUser.isBanned) {
+            return res.status(403).json({ message: 'حسابك محظور. يرجى التواصل مع الدعم الفني.' });
+        }
+        
+        req.user = decoded;
+        next();
+    } catch (err) {
+        console.error('خطأ في التحقق من التوكن:', err.message);
+        return res.status(403).json({ message: 'التوكن غير صالح أو منتهي الصلاحية' });
+    }
 }
 
 // ----------------------
@@ -146,8 +159,50 @@ app.post('/api/login', async (req, res) => {
     if (user.isBanned) {
         return res.status(403).json({ message: 'حسابك محظور. يرجى التواصل مع الدعم الفني.' });
     }
+    
+    // إنشاء التوكن
     const token = jwt.sign({ id: user.id, email: user.email, grade: user.grade, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '6h' });
-    res.json({ message: 'تم تسجيل الدخول بنجاح', token, user });
+    
+    try {
+        // تعيين التوكن كـ كوكي HttpOnly آمن (مع تنسيق موحد للاستخدام في المسح لاحقاً)
+        res.cookie('token', token, {
+            httpOnly: true,          // لا يمكن الوصول للكوكي بواسطة JavaScript
+            secure: process.env.NODE_ENV === 'production',  // يتم إرساله فقط عبر HTTPS في الإنتاج
+            sameSite: 'Strict',      // لمنع هجمات CSRF
+            path: '/',               // المسار الذي يطبق عليه الكوكي
+            domain: req.hostname === 'localhost' ? 'localhost' : undefined, // النطاق المستخدم
+            maxAge: 6 * 60 * 60 * 1000  // 6 ساعات بالمللي ثانية (نفس مدة التوكن)
+        });
+        
+        // إرجاع التوكن في الاستجابة أيضًا للتوافق الخلفي مع واجهة المستخدم الحالية
+        res.json({ message: 'تم تسجيل الدخول بنجاح', token, user });
+    } catch (error) {
+        console.error('Error happened while setting token cookie:', error);
+        res.json({ message: 'حدث خطأ اثناء محاولة تسجيل الدخول', token, user });
+    }
+});
+
+// ----------------------
+// API لتسجيل الخروج 
+// ----------------------
+app.post('/api/logout', (req, res) => {
+    try {
+        // مسح الكوكي مع الخيارات الضرورية فقط (بدون expires أو maxAge)
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            path: '/',
+            domain: req.hostname === 'localhost' ? 'localhost' : undefined
+        });
+        // مسح الكوكي بدون خيارات إضافية (للتوافق)
+        res.clearCookie('token');
+
+        res.json({ message: 'تم تسجيل الخروج بنجاح' });
+    } catch (error) {
+        console.error('خطأ أثناء تسجيل الخروج:', error);
+        res.status(500).json({ message: 'حدث خطأ أثناء تسجيل الخروج' });
+    }
 });
 
 // ----------------------

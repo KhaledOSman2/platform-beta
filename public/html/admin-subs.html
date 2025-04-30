@@ -358,16 +358,10 @@
     <script src="js/admin-subs.js"></script>
     <script src="js/main.js"></script>
     <script src="js/notification-manager.js"></script>
+    <script src="js/logout-handler.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-
-            // تعديل زر تسجيل الخروج
-            document.getElementById('headerLogoutLink').addEventListener('click', function (e) {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                localStorage.removeItem('subsJustLoggedIn');
-                window.location.href = 'login?logout=1';
-            });
+            // تم نقل منطق تسجيل الخروج إلى ملف logout-handler.js
         });
     </script>
 

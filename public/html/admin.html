@@ -591,6 +591,7 @@
     <script src="js/admin.js"></script>
     <script src="js/main.js"></script>
     <script src="js/notification-manager.js"></script>
+    <script src="js/logout-handler.js"></script>
     <script>
         // كود لتبديل الشريط الجانبي
         document.addEventListener('DOMContentLoaded', function () {
@@ -599,14 +600,6 @@
                 NotificationManager.show('تم تسجيل الدخول بنجاح', 'success');
                 localStorage.removeItem('adminJustLoggedIn'); // إزالة العلامة بعد عرض الرسالة
             }
-
-            // Add event listener for the header logout link
-            document.getElementById('headerLogoutLink').addEventListener('click', function (e) {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                localStorage.removeItem('adminJustLoggedIn');
-                window.location.href = 'login?logout=1';
-            });
 
             // تحميل الصفوف الدراسية في نموذج إضافة طالب جديد
             fetch('/api/grades')

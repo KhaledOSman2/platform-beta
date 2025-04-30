@@ -266,6 +266,7 @@
     <script src="js/course.js"></script>
     <script src="js/main.js"></script>
     <script src="js/notification-manager.js"></script>
+    <script src="js/logout-handler.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // التحقق من حالة تسجيل الدخول
@@ -299,20 +300,8 @@
 
             // تنفيذ عند تغيير حجم الشاشة
             window.addEventListener('resize', adjustNavbar);
-
-            // إصلاح زر تسجيل الخروج
-            document.getElementById('logoutBtn').addEventListener('click', function () {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                sessionStorage.removeItem('token');
-                sessionStorage.removeItem('user');
-
-                // إعادة تحميل الصفحة أو الانتقال لصفحة تسجيل الدخول
-                window.location.href = 'login?logout=1';
-            });
         });
     </script>
-    </div>
 </body>
 
 </html>

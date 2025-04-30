@@ -11,7 +11,6 @@ function formatDate(dateStr) {
         return `${day} ${month}`;
     } catch (error) {
         console.error('Error formatting date:', error.message);
-        NotificationManager.show('حدث خطأ أثناء تهيئة التاريخ', 'error');
         return '';
     }
 }
@@ -38,7 +37,6 @@ function adjustTitleSize() {
         }
     } catch (error) {
         console.error('Error adjusting title size:', error.message);
-        NotificationManager.show('حدث خطأ أثناء ضبط حجم العنوان', 'error');
     }
 }
 
@@ -59,14 +57,12 @@ async function loadCourseData() {
         loadingOverlay.style.display = 'flex';
 
         const token = localStorage.getItem('token');
-        if (!token) {
-            throw new Error('التوكن غير موجود، يرجى تسجيل الدخول');
-        }
+        // تم إزالة فحص وجود التوكن لأنه تم التحقق منه مسبقاً
 
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
         if (!courseId) {
-            throw new Error('لم يتم العثور على معرف الكورس');
+            throw new Error('لم يتم العثور على الكورس');
         }
 
         const courseResponse = await fetch(`/api/courses/${courseId}`, {
@@ -248,10 +244,12 @@ async function loadCourseData() {
         NotificationManager.show('تم تحميل بيانات الكورس بنجاح', 'success');
     } catch (error) {
         console.error('Error loading course data:', error.message);
-        NotificationManager.show(error.message || 'حدث خطأ أثناء تحميل بيانات الكورس', 'error');
-        if (error.message.includes('التوكن') || error.message.includes('معرف الكورس')) {
-            window.location.href = 'login?logout=1';
+        
+        // تجنب إظهار إشعارات الأخطاء المتعلقة بالتوكن
+        if (!error.message.includes('التوكن غير موجود')) {
+            NotificationManager.show(error.message || 'حدث خطأ أثناء تحميل بيانات الكورس', 'error');
         }
+        
     } finally {
         if (loadingOverlay) {
             loadingOverlay.style.opacity = '0';
@@ -291,7 +289,6 @@ function updateNavButtons() {
         nextBtn.disabled = currentVideoIndex === videos.length - 1;
     } catch (error) {
         console.error('Error updating nav buttons:', error.message);
-        NotificationManager.show('حدث خطأ أثناء تحديث أزرار التنقل', 'error');
     }
 }
 
@@ -308,12 +305,12 @@ function highlightCurrentVideo() {
         }
     } catch (error) {
         console.error('Error highlighting current video:', error.message);
-        NotificationManager.show('حدث خطأ أثناء تمييز الفيديو الحالي', 'error');
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
+        // تحميل بيانات الكورس - تم إزالة فحص التوكن لأنه يتم التعامل معه على الخادم
         loadCourseData();
 
         document.querySelectorAll('.card-header').forEach(header => {
@@ -336,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (error) {
                     console.error('Error toggling card header:', error.message);
-                    NotificationManager.show('حدث خطأ أثناء تبديل القسم', 'error');
                 }
             });
         });
@@ -385,12 +381,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 adjustTitleSize();
             } catch (error) {
                 console.error('Error on resize:', error.message);
-                NotificationManager.show('حدث خطأ أثناء إعادة ضبط حجم العنوان', 'error');
             }
         });
     } catch (error) {
         console.error('Error initializing page:', error.message);
-        NotificationManager.show('حدث خطأ أثناء تهيئة الصفحة', 'error');
+        NotificationManager.show('حدث خطأ أثناء تحميل الصفحة', 'error');
     }
 });
 
@@ -422,7 +417,6 @@ window.onscroll = function () {
         backToTopBtn.style.display = (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) ? "block" : "none";
     } catch (error) {
         console.error('Error handling scroll:', error.message);
-        NotificationManager.show('حدث خطأ أثناء معالجة التمرير', 'error');
     }
 };
 
@@ -431,6 +425,5 @@ function topFunction() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
         console.error('Error scrolling to top:', error.message);
-        NotificationManager.show('حدث خطأ أثناء العودة إلى أعلى الصفحة', 'error');
     }
 }

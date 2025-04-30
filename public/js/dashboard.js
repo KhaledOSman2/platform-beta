@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', function () {
     try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('التوكن غير موجود، يرجى تسجيل الدخول');
+        
+        if (!document.cookie.includes('token=')) {
+            document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Strict`;
+        }
 
         const coursesSectionHeader = document.createElement('div');
         coursesSectionHeader.className = 'courses-section-header mb-4';
@@ -244,6 +248,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 localStorage.removeItem('cachedUserData');
                 sessionStorage.removeItem('token');
                 sessionStorage.removeItem('user');
+                
+                // حذف كوكي التوكن
+                document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                
                 window.location.href = 'login?logout=1';
             } catch (error) {
                 console.error('Error logging out:', error.message);

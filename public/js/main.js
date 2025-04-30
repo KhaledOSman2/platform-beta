@@ -80,7 +80,19 @@ document.addEventListener('DOMContentLoaded', async function () {
         const latestCoursesGrid = document.getElementById('latestCoursesGrid');
 
         if (courses.length === 0) {
-            NotificationManager.show('لا توجد كورسات متاحة حاليًا', 'info');
+            if (latestCoursesGrid) {
+                latestCoursesGrid.innerHTML = `
+                    <div class="col-12 d-flex justify-content-center align-items-center">
+                        <div class="no-courses-card shadow-sm p-4 rounded-4 text-center w-100" style="background: linear-gradient(135deg, #f8fbff 60%, #e3f0ff 100%); border: 1.5px solid #3a84ed; max-width: 420px; margin: 0 auto;">
+                            <div style="font-size: 3rem; color: #3a84ed; margin-bottom: 1rem;">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <div style="font-size: 1.3rem; font-weight: bold; color: #3a84ed; margin-bottom: 0.5rem;">لا توجد كورسات متاحة حالياً</div>
+                            <div style="color: #555; font-size: 1.05rem;">تابعنا باستمرار ليصلك كل جديد من الكورسات قريباً!</div>
+                        </div>
+                    </div>
+                `;
+            }
         } else {
             courses.slice(-3).reverse().forEach(course => {
                 const courseCard = document.createElement('div');
@@ -159,23 +171,12 @@ document.addEventListener('DOMContentLoaded', function () {
         adjustNavbar();
         window.addEventListener('resize', adjustNavbar);
 
-        // إصلاح زر تسجيل الخروج
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (!logoutBtn) throw new Error('زر تسجيل الخروج غير موجود');
-        logoutBtn.addEventListener('click', function () {
-            try {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                sessionStorage.removeItem('token');
-                sessionStorage.removeItem('user');
-                window.location.href = 'login?logout=1';
-            } catch (error) {
-                console.error('Error logging out:', error.message);
-                NotificationManager.show('حدث خطأ أثناء تسجيل الخروج', 'error');
-            }
-        });
+        // تم نقل منطق تسجيل الخروج إلى ملف logout-handler.js
+        // الملف الجديد يعالج تلقائياً جميع أزرار تسجيل الخروج في الصفحة
     } catch (error) {
         console.error('Error initializing authentication:', error.message);
-        NotificationManager.show('حدث خطأ أثناء تهيئة المصادقة', 'error');
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.show('حدث خطأ أثناء تهيئة المصادقة', 'error');
+        }
     }
 });
