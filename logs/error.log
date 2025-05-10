@@ -52,3 +52,7 @@
 [2025-05-01T06:04:32.842Z] [MongoDB Connection Error]: AggregateError has an empty errors array. Please check the `cause` property for more information.
 [2025-05-01T07:02:34.111Z] [MongoDB Connection Error]: AggregateError has an empty errors array. Please check the `cause` property for more information.
 [2025-05-01T07:02:41.370Z] [MongoDB Connection Error]: AggregateError has an empty errors array. Please check the `cause` property for more information.
+[2025-05-01T08:14:20.765Z] [MongoDB Connection Error]: AggregateError has an empty errors array. Please check the `cause` property for more information.
+[2025-05-01T08:15:15.929Z] [MongoDB Connection Error]: AggregateError has an empty errors array. Please check the `cause` property for more information.
+[2025-05-01T08:29:58.577Z] [MongoDB Connection Error]: AggregateError has an empty errors array. Please check the `cause` property for more information.
+[2025-05-10T10:39:53.370Z] [MongoDB Connection Error]: AggregateError has an empty errors array. Please check the `cause` property for more information.

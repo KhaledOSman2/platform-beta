@@ -169,10 +169,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 }, token);
 
                 if (result.logout) {
+                    // مسح التوكن من localStorage
                     localStorage.removeItem('token');
                     localStorage.removeItem('grade');
                     localStorage.removeItem('cachedUserData');
-                    window.location.href = 'login?logout=1';
+                    
+                    // مسح التوكن من جميع أنواع الـ cookies بما في ذلك HttpOnly
+                    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    
+                    // طلب تسجيل الخروج كامل من الخادم لمسح HttpOnly cookies
+                    fetch('/api/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    }).finally(() => {
+                        // الانتقال إلى صفحة تسجيل الدخول بعد مسح جميع التوكنات
+                        window.location.href = 'login?logout=1';
+                    });
                 }
                 document.getElementById('password').value = '';
             } catch (error) {

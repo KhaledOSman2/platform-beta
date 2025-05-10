@@ -45,7 +45,7 @@ async function authenticateTokenForRoute(req, res, next) {
 // تحقق لصلاحيات الأدمن
 function requireAdmin(req, res, next) {
     if (!req.user || !req.user.isAdmin) {
-        return res.redirect('/');
+        return res.redirect('/login?from=admin');
     }
     next();
 }
@@ -62,6 +62,12 @@ function setupRoutes(app) {
         res.sendFile(path.join(__dirname, 'public/html/register.html'));
     });
     
+    app.get('/about', (req, res) => {
+        res.sendFile(path.join(__dirname, 'public/html/about.html'));
+    });
+    app.get('/404', (req, res) => {
+        res.sendFile(path.join(__dirname, 'public/html/404.html'));
+    });
     // معالجة تسجيل الخروج - صفحة عامة تمسح الكوكي وتعيد التوجيه
     app.get('/logout', (req, res) => {
         try {

@@ -62,7 +62,7 @@ const {
 } = require('./models');
 const fileManager = require('./file-manager');
 const app = express();
-const PORT = 4000;
+const PORT = 5000;
 const JWT_SECRET = "914a20dddcf9c8d07abf5a4fd19c9895761b2381ca439db756a4a1c479ad37c0";
 
 app.use(cookieParser());
@@ -146,6 +146,14 @@ app.post('/api/register', async (req, res) => {
 // ----------------------
 // API لتسجيل الدخول (توليد توكن JWT)
 // ----------------------
+// نقطة نهاية API للتحقق من صلاحية التوكن
+app.get('/api/validate-token', authenticateToken, (req, res) => {
+    // إذا وصل المستخدم إلى هنا، فهذا يعني أن التوكن صالح لأن middleware authenticateToken سيمنع الوصول إذا كان التوكن منتهي الصلاحية
+    res.json({ valid: true });
+});
+
+// نقطة نهاية API لتسجيل الخروج وإزالة الـ HttpOnly cookies - تم تحديثها
+
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -186,19 +194,31 @@ app.post('/api/login', async (req, res) => {
 // API لتسجيل الخروج 
 // ----------------------
 app.post('/api/logout', (req, res) => {
+    console.log('Processing logout request...');
     try {
-        // مسح الكوكي مع الخيارات الضرورية فقط (بدون expires أو maxAge)
-        res.clearCookie('token', {
+        // مسح جميع الكوكيز المتعلقة بالمصادقة
+        const cookieOptions = {
+            path: '/',
+            domain: req.hostname === 'localhost' ? 'localhost' : undefined,
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
-            path: '/',
-            domain: req.hostname === 'localhost' ? 'localhost' : undefined
-        });
-        // مسح الكوكي بدون خيارات إضافية (للتوافق)
-        res.clearCookie('token');
+            sameSite: 'Strict'
+        };
 
-        res.json({ message: 'تم تسجيل الخروج بنجاح' });
+        // مسح الكوكيز الأساسية
+        res.clearCookie('token', cookieOptions);
+        res.clearCookie('user_info', { ...cookieOptions, httpOnly: false });
+        
+        // مسح بالطريقة القديمة أيضًا (للتوافق)
+        res.clearCookie('token');
+        res.clearCookie('user_info');
+
+        // محاولة صريحة لإزالة الكوكيز عن طريق تعيين تواريخ انتهاء قديمة
+        res.cookie('token', '', { expires: new Date(0), path: '/' });
+        res.cookie('user_info', '', { expires: new Date(0), path: '/' });
+
+        console.log('Successfully cleared all authentication cookies');
+        res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
     } catch (error) {
         console.error('خطأ أثناء تسجيل الخروج:', error);
         res.status(500).json({ message: 'حدث خطأ أثناء تسجيل الخروج' });

@@ -41,10 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const grade = document.getElementById('grade').value;
         
         try {
-            // Mostrar indicador de carga
-            if (typeof NotificationManager !== 'undefined') {
-                NotificationManager.show('جاري إنشاء الحساب...', 'info');
-            }
+            
             
             const response = await fetch('/api/register', {
                 method: 'POST',
@@ -69,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     // تخزين التوكن في cookie لإرساله مع الطلبات اللاحقة
                     document.cookie = `token=${loginData.token}; path=/; max-age=86400; SameSite=Strict`;
-                    
+                    NotificationManager.show('جاري إنشاء الحساب...', 'info');
                     window.location.href = 'dashboard?registered=1';
                 } else {
                     console.error('Error en inicio de sesión post-registro:', loginData.message);

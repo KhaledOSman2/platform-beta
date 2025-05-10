@@ -1,9 +1,3 @@
-/**
- * logout-handler.js
- * ملف مركزي لإدارة عملية تسجيل الخروج من المنصة
- * يتم تضمينه في جميع صفحات الموقع التي تحتوي على زر تسجيل الخروج
- */
-
 document.addEventListener('DOMContentLoaded', function() {
     // البحث عن جميع أزرار تسجيل الخروج في الصفحة
     const logoutButtons = document.querySelectorAll('.logout-btn, #logoutBtn, #headerLogoutLink, [data-logout="true"]');
